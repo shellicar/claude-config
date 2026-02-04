@@ -68,6 +68,35 @@ az repos pr create --title "Title" --description "Description"
 az repos pr update --id ID --title "Title" --description "Description"
 ```
 
+## Milestones (GitHub)
+
+If a version is known (e.g., from `version-management` skill), create/use a milestone:
+
+```bash
+# Check if milestone exists
+gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title=="1.2.1")'
+
+# Create if needed
+gh api repos/{owner}/{repo}/milestones -f title="1.2.1"
+
+# Create PR with milestone
+gh pr create --title "Title" --body "Description" --milestone "1.2.1"
+```
+
+### When Version Is Not Known
+
+If the PR is being created without a version bump (e.g., changes only, version management later), use `AskUserQuestion` to confirm:
+
+```text
+No version has been determined for this PR.
+
+Would you like to:
+1. Proceed without a milestone (version management later)
+2. Run version-management first to determine the version
+```
+
+This ensures the user consciously decides whether to proceed without a milestone.
+
 ## Convention Requirements
 
 Convention skills must define:

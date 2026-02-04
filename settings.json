@@ -4,13 +4,12 @@
       "WebFetch(domain:next.shadcn-svelte.com)",
       "Read(//home/stephen/.claude/CLAUDE.md)",
       "Bash(pnpm run type-check:*)",
-      "WebFetch(domain:raw.githubusercontent.com)"
-    ]
-  },
-  "spinnerVerbs": {
-    "mode": "replace",
-    "verbs": [
-      "Working"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(./ecosystem/scripts/check-wip.sh:*)",
+      "Bash(git fetch:*)",
+      "Bash(pnpm audit:*)",
+      "Bash(pnpm outdated:*)",
+      "Bash(pnpm why:*)"
     ]
   },
   "hooks": {
@@ -24,6 +23,12 @@
           }
         ]
       }
+    ]
+  },
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Working"
     ]
   }
 }

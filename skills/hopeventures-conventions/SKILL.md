@@ -26,6 +26,11 @@ Match when:
 - `fix/<name>`
 - `main` (default branch)
 
+## Direct Commits to Main
+
+The following repos allow direct commits to main (no branch required):
+- Repos ending with `-Documentation` 
+
 ## Commit Messages
 
 - Concise, single line
