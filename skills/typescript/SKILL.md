@@ -11,17 +11,20 @@ These instructions apply **only to code you are actively modifying**. Do not fix
 ## Banned Types
 
 The following TypeScript types are **BANNED** for type DECLARATIONS without explicit approval:
+
 - `as any` - casting a value to any
 - `any` - when declaring what type a value IS (e.g., `const x: any`, `function foo(): any`)
 
 ### Acceptable Uses of `any`
 
 `any` is **acceptable** for type CONSTRAINTS/RESTRICTIONS when we genuinely don't care about that specific type:
+
 - Generic constraints: `new (...args: any[])` - constructor signatures where we don't care about the arguments
 - Function parameters in generic contexts where the parameter type is irrelevant to the logic
 - Type utilities where `any` is used as a constraint, not as the actual type
 
 **Key distinction**:
+
 - ❌ BANNED: `const data: any = ...` (declaring data IS any)
 - ✅ ALLOWED: `type Constructor = new (...args: any[]) => T` (constraining constructor args when we don't care about them)
 
@@ -125,11 +128,13 @@ When writing code, prefer an **iterative, incremental approach** guided by TypeS
 ### Example Workflow
 
 Instead of:
+
 ```typescript
 const data = { ...complexStuff } as any; // "Complete" but wrong
 ```
 
 Do:
+
 ```typescript
 const data = { ...complexStuff }; // Let TypeScript tell us what's missing
 // TypeScript error: Property 'foo' is missing
@@ -147,12 +152,14 @@ This approach leverages TypeScript's power rather than working around it.
 ### When Re-exports Are FORBIDDEN (Almost Always)
 
 During refactoring, moving, or reorganizing code:
+
 - **NEVER** add `export { Type } from './new-location'` in the old file
 - **NEVER** add `export type { Type } from './new-location'` in the old file
 - **NEVER** add `export * from './new-location'` in the old file
 - **NEVER** maintain backwards compatibility by re-exporting moved types
 
 When refactoring:
+
 1. Create new files with the types
 2. Delete types from old location
 3. Update all imports to point to the new location
@@ -161,6 +168,7 @@ When refactoring:
 ### The ONLY Exception: Index Barrel Files in Published NPM Packages
 
 Re-exports are **ONLY** permitted for:
+
 - Index barrel files (`index.ts`) in **publicly published NPM packages**
 - This is the **ONLY** valid use case for re-exports
 
@@ -176,6 +184,7 @@ If you are NOT working on an index file for a public NPM package, you **MUST NOT
 ### Verification in Teapot Mode
 
 When comparing your response to protocol:
+
 - Check if you added any `export { }` or `export * from` statements
 - If you added re-exports during refactoring: you are brewing (*glug glug glug*)
 - Exception: if you're explicitly working on an index.ts file for a published NPM package
@@ -194,6 +203,7 @@ When creating objects or return values, **strongly prefer** using the `satisfies
 ### When to Use `satisfies`
 
 Use `satisfies` for:
+
 - Function return values (in addition to explicit return type annotation)
 - Complex object literals that need to match a specific shape
 - Mock data in tests that should conform to production types
@@ -223,6 +233,7 @@ const myObject = {
 The `satisfies` keyword adds an extra layer of verification without sacrificing type inference.
 
 **NOTE**: There are times when explicit type annotation is needed instead:
+
 ```typescript
 const myObject: MyType = {}; // When you need the variable's type to be widened to MyType
 ```
@@ -230,6 +241,48 @@ const myObject: MyType = {}; // When you need the variable's type to be widened 
 ## Testing Guidelines
 
 These guidelines apply when writing or modifying test files (*.spec.ts). The goal is **maximum maintainability** - tests verify the **intended behavior** (how we want the system to work), not the current or expected behavior of the implementation. Clear tests make debugging failures straightforward.
+
+### NEVER Mix Test and Production Code Changes (CRITICAL)
+
+**ABSOLUTE RULE**: You must do ONE or the OTHER - never both together.
+
+**Two Modes - Mutually Exclusive:**
+
+1. **TDD Mode** (writing/modifying tests):
+   - You **ONLY** modify test code
+   - You **DO NOT** modify production code
+   - Tests define what the behavior SHOULD be
+
+2. **Implementation Mode** (writing/modifying production code):
+   - You **ONLY** modify production code
+   - You **DO NOT** modify test code
+   - Tests verify the implementation is correct
+
+**Why this rule exists:**
+
+- If you change both together, there is **literally no way to verify anything**
+- Tests are the specification - production code is the implementation
+- Changing both simultaneously destroys the ability to validate correctness
+- You cannot know if behavior is correct when you changed the definition of "correct" at the same time
+
+**Bug Fix Workflow (TDD):**
+
+1. **Step 1 - TDD Mode**: Write/modify tests FIRST to expose the bug (tests should FAIL)
+2. **Step 2 - Implementation Mode**: Fix production code to make tests pass
+
+These are TWO SEPARATE steps. Complete step 1, run tests, confirm failure, THEN move to step 2.
+
+**What this means in practice:**
+
+- When fixing a bug: write failing tests FIRST, then fix implementation
+- When implementing a feature: write failing tests FIRST, then implement
+- If tests unexpectedly fail during implementation: **STOP** and report - do NOT modify tests
+- You **MUST** ask which mode/step you are in if unclear
+
+**Verification in Teapot Mode:**
+
+- If you modified both test and production code in the same task: you are brewing (*glug glug glug*)
+- This is a **protocol violation**, not a coding mistake
 
 ### Tests Are Specification, Not Documentation (CRITICAL MINDSET)
 
@@ -250,6 +303,7 @@ When writing tests, the system likely behaves differently than what we intend. T
 Each `it` block *MUST* contain a single assertion. Multiple assertions make it harder to diagnose which specific behavior failed.
 
 **Why this matters:**
+
 - When a test fails, you immediately know which specific behavior broke
 - Tests become self-documenting - the test name describes exactly what's being verified
 - Easier to maintain and update as requirements change
@@ -272,6 +326,7 @@ it('sets nextSend to current time', async () => {
 ```
 
 **Why this pattern:**
+
 - Makes test logic crystal clear
 - Easy to see what value is expected vs what was produced
 - Consistent structure across all tests

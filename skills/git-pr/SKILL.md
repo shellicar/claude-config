@@ -10,15 +10,16 @@ Create or update a pull request with a detailed summary of changes.
 
 ## Usage
 
-### 1. Detect Context
+### 1. Detect Convention
 
-Run the context script to determine which conventions apply:
+Run the detection script to determine which convention applies:
 
 ```bash
-~/.claude/skills/git-pr/scripts/git-context.sh
+~/.claude/skills/git-pr/scripts/detect-convention.sh
 ```
 
-This outputs branch, remote URL, and local email for convention detection.
+This outputs the convention name (e.g., `shellicar`, `eagers`, `hopeventures`) or fails if no match.
+Load the corresponding `<convention>-conventions` skill based on the output.
 
 ### 2. Determine Ancestor Branch
 

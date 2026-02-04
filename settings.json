@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:next.shadcn-svelte.com)",
+      "Read(//home/stephen/.claude/CLAUDE.md)",
+      "Bash(pnpm run type-check:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ]
+  },
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Working"
+    ]
+  }
+}
