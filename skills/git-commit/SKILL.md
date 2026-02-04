@@ -50,6 +50,11 @@ Create a commit from staged changes with a concise, single-line message.
    git commit -m "message"
    ```
 
+8. **Push**
+   ```bash
+   git push
+   ```
+
 ## IDE Diagnostics
 
 When files are edited, IDE diagnostics may appear. Handle them as follows:
