@@ -17,6 +17,8 @@ Personal Claude Code configuration with custom skills and protocols.
 
 - **git-commit** - Create commits with concise messages (user-invocable: `/commit`)
 - **git-pr** - Create or update pull requests with change summaries (user-invocable: `/pr`)
+- **maintenance-release** - Perform maintenance release with security fixes and dependency updates (user-invocable: `/maintenance-release`)
+- **version-management** - Determine next version and update CHANGELOG for releases
 
 ### Convention Skills
 
