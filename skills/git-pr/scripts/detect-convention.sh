@@ -16,9 +16,15 @@ fi
 
 # GitHub conventions - require remote AND directory match
 if echo "$REMOTE" | grep -q "github.com/shellicar/"; then
-  if echo "$PWD_REAL" | grep -q "^$HOME/repos/@shellicar/"; then
+  # Config repos (no PRs, direct to main)
+  if [ "$PWD_REAL" = "$HOME/.claude" ] || [ "$PWD_REAL" = "$HOME/dotfiles" ]; then
+    echo "shellicar-config"
+    exit 0
+  # OSS packages
+  elif echo "$PWD_REAL" | grep -q "^$HOME/repos/@shellicar/"; then
     echo "shellicar-oss"
     exit 0
+  # Personal projects
   elif echo "$PWD_REAL" | grep -q "^$HOME/repos/shellicar/"; then
     echo "shellicar"
     exit 0

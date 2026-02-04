@@ -44,21 +44,36 @@ Create a commit from staged changes with a concise, single-line message.
     If it outputs a convention name, load the corresponding `<convention>-conventions` skill.
     If it fails, proceed without convention-specific rules.
 
-5. **Generate commit message**
+5. **Check branch protection**
+
+    ```bash
+    git branch --show-current
+    ```
+
+    If on `main` or `master`:
+    - If convention is `shellicar-config` → allowed, continue
+    - Otherwise → **STOP** and ask user to create a new branch
+
+    Do NOT commit directly to main/master (except for config repos). Offer to create a branch:
+    ```bash
+    git checkout -b <branch-name>
+    ```
+
+6. **Generate commit message**
     - Concise, single line
     - Imperative mood ("Add feature" not "Added feature")
     - No period at end
     - Detail belongs in PRs, not commits
 
-6. **Show the user the proposed commit message and ask for confirmation**
+7. **Show the user the proposed commit message and ask for confirmation**
 
-7. **Commit**
+8. **Commit**
 
     ```bash
     git commit -m "message"
     ```
 
-8. **Push**
+9. **Push**
 
     ```bash
     git push
