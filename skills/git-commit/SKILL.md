@@ -50,6 +50,15 @@ Create a commit from staged changes with a concise, single-line message.
    git commit -m "message"
    ```
 
+## IDE Diagnostics
+
+When files are edited, IDE diagnostics may appear. Handle them as follows:
+- **Errors**: Report to the user and address before committing
+- **Warnings/Information**: Ignore silently (e.g., spell-checker warnings)
+- **Exception**: If a warning appears critical or high-severity (e.g., security issue, likely runtime error), you MAY mention it
+
+Do NOT mention trivial non-error diagnostics to the user.
+
 ## Convention Hooks
 
 Convention skills may define:
