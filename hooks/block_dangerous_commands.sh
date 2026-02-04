@@ -1,12 +1,82 @@
 #!/bin/sh
+# Block dangerous commands from Claude
+# Usage: Called as a PreToolUse hook, receives tool input on stdin
+# Test: ./block_dangerous_commands.sh --test
 
-input=$(cat)
+if [ "$1" = "--test" ]; then
+  TEST_MODE=true
+else
+  TEST_MODE=false
+fi
 
-case "$input" in
-  *xargs*)           echo "BLOCKED: xargs" >&2; exit 2 ;;
-  *sed*)             echo "BLOCKED: sed" >&2; exit 2 ;;
-  *"git checkout"*)  echo "BLOCKED: git checkout" >&2; exit 2 ;;
-  *'"rm '*|*'"rm"'*) echo "BLOCKED: rm" >&2; exit 2 ;;
-esac
+block() {
+  pattern="$1"
+  name="$2"
 
-exit 0
+  if [ "$TEST_MODE" = true ]; then
+    echo "$INPUT" | grep -qE "$pattern" && return 0 || return 1
+  else
+    echo "$INPUT" | grep -qE "$pattern" && { echo "BLOCKED: $name in: $INPUT" >&2; exit 2; }
+  fi
+}
+
+check_all() {
+  block '\bxargs\b' 'xargs'
+  block '\bsed\b' 'sed'
+  block '\bgit\b.*\brm\b' 'git rm'
+  block '\bgit\b.*\bcheckout\b' 'git checkout'
+  block '\bgit\b.*\breset\b' 'git reset'
+  block '"rm ' 'rm'
+}
+
+if [ "$TEST_MODE" = false ]; then
+  INPUT=$(cat)
+  check_all
+  exit 0
+fi
+
+# --- Test Suite ---
+PASS=0
+FAIL=0
+
+test_blocked() {
+  INPUT="$1"
+  block "$3" "$2"
+  [ $? -eq 0 ] && { echo "PASS: Blocked '$2' in: $1"; PASS=$((PASS+1)); } || { echo "FAIL: Should block '$2' in: $1"; FAIL=$((FAIL+1)); }
+}
+
+test_allowed() {
+  INPUT="$1"
+  block "$3" "$2"
+  [ $? -eq 1 ] && { echo "PASS: Allowed '$2' in: $1"; PASS=$((PASS+1)); } || { echo "FAIL: False positive '$2' in: $1"; FAIL=$((FAIL+1)); }
+}
+
+echo "=== Should block ==="
+test_blocked '{"command": "find . | xargs rm"}' 'xargs' '\bxargs\b'
+test_blocked '{"command": "sed -i s/foo/bar/"}' 'sed' '\bsed\b'
+test_blocked '{"command": "git rm file"}' 'git rm' '\bgit\b.*\brm\b'
+test_blocked '{"command": "git -C /path rm -r"}' 'git rm' '\bgit\b.*\brm\b'
+test_blocked '{"command": "git --git-dir=/path rm file"}' 'git rm' '\bgit\b.*\brm\b'
+test_blocked '{"command": "git checkout -- file"}' 'git checkout' '\bgit\b.*\bcheckout\b'
+test_blocked '{"command": "git -C /path checkout main"}' 'git checkout' '\bgit\b.*\bcheckout\b'
+test_blocked '{"command": "git --no-pager checkout main"}' 'git checkout' '\bgit\b.*\bcheckout\b'
+test_blocked '{"command": "git -c core.autocrlf=false checkout"}' 'git checkout' '\bgit\b.*\bcheckout\b'
+test_blocked '{"command": "git reset --hard HEAD"}' 'git reset' '\bgit\b.*\breset\b'
+test_blocked '{"command": "git -C /path reset HEAD~1"}' 'git reset' '\bgit\b.*\breset\b'
+test_blocked '{"command": "git --no-pager reset --hard"}' 'git reset' '\bgit\b.*\breset\b'
+test_blocked '{"command": "rm file.txt"}' 'rm' '"rm '
+
+echo ""
+echo "=== Should NOT block ==="
+test_allowed '{"content": "unstaged changes"}' 'sed' '\bsed\b'
+test_allowed '{"content": "based on this"}' 'sed' '\bsed\b'
+test_allowed '{"content": "git commit confirmation"}' 'git rm' '\bgit\b.*\brm\b'
+test_allowed '{"content": "git commit form validation"}' 'git rm' '\bgit\b.*\brm\b'
+test_allowed '{"content": "perform action"}' 'rm' '"rm '
+test_allowed '{"content": "confirm"}' 'rm' '"rm '
+test_allowed '{"content": "checkout process"}' 'git checkout' '\bgit\b.*\bcheckout\b'
+test_allowed '{"content": "reset the form"}' 'git reset' '\bgit\b.*\breset\b'
+
+echo ""
+echo "Passed: $PASS / Failed: $FAIL"
+[ $FAIL -eq 0 ]

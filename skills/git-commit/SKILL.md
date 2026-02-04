@@ -25,7 +25,7 @@ Create a commit from staged changes with a concise, single-line message.
 
     If unstaged changes exist:
     - Show the user WHAT the unstaged changes are (diff content, not just file names)
-    - Ask if they forgot to stage them or intentionally want to leave them out
+    - Use `AskUserQuestion` with options like "Stage them", "Leave unstaged"
     - Stage additional files if requested
 
 3. **Read the staged diff content**
@@ -66,6 +66,8 @@ Create a commit from staged changes with a concise, single-line message.
     - Detail belongs in PRs, not commits
 
 7. **Show the user the proposed commit message and ask for confirmation**
+
+    Use `AskUserQuestion` with options like "Commit", "Edit message", "Cancel"
 
 8. **Commit**
 
