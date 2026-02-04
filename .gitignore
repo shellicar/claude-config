@@ -1,5 +1,9 @@
 *
-!*/
 
-!**/*.md
+!hooks/
+!hooks/**/*.sh
+
+!skills/
+!skills/**
+
 !**/.gitignore

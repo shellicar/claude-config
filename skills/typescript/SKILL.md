@@ -53,6 +53,56 @@ You *MUST* follow this exact protocol if you believe a banned type is necessary:
    - When comparing your response to protocol, check for any banned type usage
    - If banned type is used without approval: you are brewing (*glug glug glug*)
 
+## Temporal Type Naming Standards
+
+When naming fields that store temporal data, use suffixes that clearly indicate the js-joda type:
+
+| js-joda Type | Naming Convention | Examples |
+|-------------|-------------------|----------|
+| `Date` / `Instant` | `*Utc` | `createdUtc`, `modifiedUtc`, `expiresUtc` |
+| `LocalDate` | `*Date` | `birthDate`, `expiryDate`, `effectiveDate` |
+| `LocalTime` | `*Time` | `startTime`, `endTime`, `scheduledTime` |
+| `LocalDateTime` | `*DateTime` | `scheduledDateTime`, `recordedDateTime` |
+| `ZonedDateTime` | `*ZonedDateTime` | `appointmentZonedDateTime`, `eventZonedDateTime` |
+| `Duration` | `*Duration` | `validDuration`, `timeoutDuration` |
+| `Period` | `*Period` | `billingPeriod`, `trialPeriod` |
+| `Year` | `*Year` | `modelYear`, `fiscalYear` |
+| `Month` | `*Month` | `birthMonth`, `expiryMonth` |
+| `YearMonth` | `*YearMonth` | `periodYearMonth`, `billingYearMonth` |
+| `ZoneId` | `*ZoneId` | `userZoneId`, `defaultZoneId` |
+| `ZoneOffset` | `*ZoneOffset` | `timezoneZoneOffset`, `utcZoneOffset` |
+
+### Why These Conventions
+
+- **Clarity**: The suffix immediately indicates the temporal precision and timezone semantics
+- **Type Safety**: Makes it obvious when converting between types (e.g., `Date` → `Instant` requires UTC context)
+- **Consistency**: Uniform naming across the codebase prevents confusion
+- **Self-Documenting**: Code readers know exactly what temporal type is expected
+
+### Examples
+
+```typescript
+// Good - clear temporal types
+type Event = {
+  createdUtc: Date;           // Instant/UTC timestamp
+  scheduledDate: string;      // LocalDate (ISO format)
+  startTime: string;          // LocalTime (ISO format)
+  appointmentZonedDateTime: string; // ZonedDateTime (ISO format with zone)
+  validDuration: string;      // Duration (ISO 8601 duration)
+  fiscalYear: number;         // Year
+};
+
+// Bad - ambiguous naming
+type Event = {
+  created: Date;              // What timezone? Instant or LocalDateTime?
+  scheduled: string;          // Date? DateTime? ZonedDateTime?
+  start: string;              // Time? DateTime? Instant?
+  appointment: string;        // What temporal type?
+  valid: string;              // Duration? Instant?
+  fiscal: number;             // Year? Just a number?
+};
+```
+
 ## Iterative Coding Approach
 
 When writing code, prefer an **iterative, incremental approach** guided by TypeScript's type system.

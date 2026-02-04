@@ -1,0 +1,75 @@
+---
+name: pr
+description: Create or update a pull request with a summary of all changes since the ancestor branch
+allowed-tools: Bash(~/.claude/skills/git-pr/scripts/*)
+---
+
+# Git PR Workflow
+
+Create or update a pull request with a detailed summary of changes.
+
+## Usage
+
+### 1. Detect Context
+
+Run the context script to determine which conventions apply:
+
+```bash
+~/.claude/skills/git-pr/scripts/git-context.sh
+```
+
+This outputs branch, remote URL, and local email for convention detection.
+
+### 2. Determine Ancestor Branch
+
+Run the ancestor detection script:
+
+```bash
+~/.claude/skills/git-pr/scripts/git-ancestor.sh
+```
+
+This finds the correct base branch using merge-base analysis, detecting epic branches when present.
+
+### 3. Generate Change Summary
+
+Run the summary script:
+
+```bash
+~/.claude/skills/git-pr/scripts/git-summary.sh
+```
+
+This outputs:
+- Ancestor branch detected
+- Staged changes
+- Commits since ancestor
+- Diff stats from ancestor
+
+### 4. Create PR Content
+
+Based on loaded convention skill:
+- **Title**: Short summary of the branch purpose
+- **Description**: Detailed summary of changes, grouped by feature/area
+- **Work Items**: Link format per convention (e.g., `#123`, `AB#1234`)
+
+### 5. Create or Update PR
+
+**GitHub** (via convention):
+```bash
+gh pr create --title "Title" --body "Description"
+# or
+gh pr edit --title "Title" --body "Description"
+```
+
+**Azure DevOps** (via convention):
+```bash
+az repos pr create --title "Title" --description "Description"
+# or
+az repos pr update --id ID --title "Title" --description "Description"
+```
+
+## Convention Requirements
+
+Convention skills must define:
+- `platform`: `github` or `azure-devops`
+- `work_item_format`: How to link work items in PR description
+- `pr_template`: Structure for PR description
