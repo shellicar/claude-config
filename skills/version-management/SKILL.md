@@ -74,14 +74,17 @@ For features you're not fully confident in, use pre-release versions:
 
 ### Confirm with User
 
-Use `AskUserQuestion` to confirm the version:
+**REQUIRED**: Use the `AskUserQuestion` tool to confirm the version before proceeding.
 
-```text
-Current version: 1.2.0
-Recommended next version: 1.2.1 (patch - security fix)
+Example options:
+- "1.2.1 (patch)" - Recommended version based on change type
+- "1.3.0 (minor)" - Alternative if changes warrant it
+- "Other" - User provides custom version
 
-Is this correct?
-```
+The question should include:
+- Current version
+- Recommended next version
+- Reason for recommendation (security fix, bug fix, new feature, etc.)
 
 ## Phase 3: Update CHANGELOG.md
 

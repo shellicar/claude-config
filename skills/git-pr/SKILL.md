@@ -97,6 +97,72 @@ Would you like to:
 
 This ensures the user consciously decides whether to proceed without a milestone.
 
+## Auto-Merge (GitHub)
+
+After creating a PR, use `AskUserQuestion` to offer auto-merge:
+
+- "Enable auto-merge" - Merges automatically when checks pass
+- "Manual merge" - Leave for manual merge later
+
+If auto-merge selected:
+
+```bash
+gh pr merge --auto --squash
+```
+
+## Post-Merge Cleanup (GitHub)
+
+After a PR is merged, clean up branches:
+
+### 1. Verify Branch Content is Merged
+
+Check that the branch changes exist in main (handles squash merges):
+
+```bash
+# Fetch latest
+git fetch origin
+
+# Get branch diff content
+BASE=$(git merge-base HEAD origin/main)
+BRANCH_DIFF=$(git diff $BASE HEAD | sed -n '/^---/!p' | sed -n '/^+++/!p' | sed -n '/^@@/!p' | sed -n '/^index /!p')
+
+# Check if main contains the same changes
+# (Compare against recent commits in main)
+```
+
+Alternatively, use `~/dotfiles/git-check.sh <branch>` if available.
+
+### 2. Delete Remote Branch
+
+```bash
+git push origin --delete <branch-name>
+```
+
+### 3. Prune Stale Remote References
+
+```bash
+git fetch -p
+```
+
+### 4. Delete Local Branch
+
+```bash
+git switch main
+git branch -D <branch-name>
+```
+
+### Post-Merge Flow
+
+After merge is confirmed, use `AskUserQuestion` with **two questions**:
+
+1. **Release**: "Create a release?" (triggers `github-release` skill)
+   - "Create release" - Run github-release workflow
+   - "Skip release" - No release now
+
+2. **Cleanup**: "Clean up branches?"
+   - "Clean up branches" - Delete remote and local branches, switch to main
+   - "Keep branches" - Leave branches for manual cleanup
+
 ## Convention Requirements
 
 Convention skills must define:

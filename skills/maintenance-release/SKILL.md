@@ -67,7 +67,22 @@ To find the actual CVE ID (needed for branch naming):
 
 Example: GHSA-7h2j-956f-4vf2 → follow link to package repo → CVE-2026-25547
 
-### 1.2 Trace Dependency Origins
+### 1.2 Check @shellicar Package Dependencies
+
+If a CVE is found, check if it affects other @shellicar packages. Most packages share similar dev/build dependencies, so a CVE in one likely affects all.
+
+```bash
+# Reference the dependency graph
+cat ~/repos/@shellicar/ecosystem/DEPENDENCY-GRAPH.md
+```
+
+**Important**: Update packages in dependency order (Tier 0 → Tier 1 → Tier 2). For example, if `build-clean` has a CVE fix, release it first before updating packages that depend on it.
+
+If an @shellicar dependency has a newer version with the fix:
+- Include that update in the plan
+- Note: "Includes CVE fix from @shellicar/build-clean 1.2.1"
+
+### 1.3 Trace Dependency Origins
 
 For each CVE or notable update, trace where it comes from:
 
@@ -93,7 +108,7 @@ Example output interpretation:
 
 This shows the CVE is in a dev dependency chain → lower risk.
 
-### 1.3 Check for Available Updates
+### 1.5 Check for Available Updates
 
 Check ALL packages in the workspace, not just the root.
 
@@ -129,7 +144,7 @@ pnpm dlx npm-check-updates --workspaces
 - **Minor**: New features, backwards compatible
 - **Patch**: Bug fixes only
 
-### 1.4 Identify Package Context
+### 1.6 Identify Package Context
 
 For each update, determine:
 
