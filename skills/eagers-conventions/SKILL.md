@@ -112,11 +112,9 @@ Brief description of the changes.
 
 ## Area Paths & Iterations
 
-## Area Paths & Iterations
-
 - **Area Path**: `{Project}\{Area}`
 - **Parent Iteration**: `{Project}\{Area}` (for Features and above)
-- **Sprint Iterations**: `{Project}\{Area}\{Sprint}`, `{Project}\{Area}\{Sprint}`, etc.
+- **Sprint Iterations**: `{Project}\{Area}\{Sprint}`, etc.
 
 ### Assignment Rules
 
@@ -125,8 +123,8 @@ Brief description of the changes.
 | Initiative | `{Project}\{Area}` | `{Project}\{Area}` (parent) |
 | Epic | `{Project}\{Area}` | `{Project}\{Area}` (parent) |
 | Feature | `{Project}\{Area}` | `{Project}\{Area}` (parent) |
-| PBI | `{Project}\{Area}` | `{Project}\{Area}\<current sprint>` |
-| Task | `{Project}\{Area}` | `{Project}\{Area}\<current sprint>` |
+| PBI | `{Project}\{Area}` | `{Project}\{Area}\{Sprint}` |
+| Task | `{Project}\{Area}` | `{Project}\{Area}\{Sprint}` |
 
 ### Finding Current Sprint
 
@@ -139,13 +137,13 @@ The current sprint is where today's date falls between `startDate` and `finishDa
 ### Example Work Item Hierarchy
 
 ```
-Initiative #1001: Application Name
-  └─ Epic #1002: Major Feature
-       └─ Feature #1003: Specific capability
-            └─ PBI #1004: Deliverable work
-                 ├─ Task #1005: Implementation step 1
-                 ├─ Task #1006: Implementation step 2
-                 └─ Task #1007: Implementation step 3
+Initiative: Application Name
+  └─ Epic: Major Feature
+       └─ Feature: Specific capability
+            └─ PBI: Deliverable work
+                 ├─ Task: Implementation step 1
+                 ├─ Task: Implementation step 2
+                 └─ Task: Implementation step 3
 ```
 
 ### CLI Examples
