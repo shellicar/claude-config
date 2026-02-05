@@ -172,7 +172,46 @@ az repos pr work-item add --id <PR_ID> --work-items <WI_ID1> <WI_ID2>
 
 This keeps the description clean while still associating all related work.
 
-**Auto-complete**: CONFIRM WITH USER before setting. The merge strategy (squash vs merge) may need to be configured in Azure DevOps UI or via `--squash` flag - verify correct settings before using.
+### PR Completion Workflow
+
+Follow this exact workflow when completing a PR via CLI:
+
+1. **Create PR** with PBI linked in description
+2. **Link Task** via `az repos pr work-item add --id <PR_ID> --work-items <TASK_ID>`
+3. **Preview merge message**: `pr-merge-message.sh --org <org> --id <PR_ID> --show`
+4. **Set auto-complete with merge message**:
+   ```bash
+   pr-merge-message.sh --org <org> --id <PR_ID> --set-auto-complete
+   ```
+
+The `--set-auto-complete` option sets auto-complete with all required flags (`--squash true`, `--transition-work-items true`) AND the merge commit message in a single command, then validates it was set correctly.
+
+**Note**: Setting auto-complete via CLI without `--merge-commit-message` clears any existing message. The script handles this by setting both together.
+
+### Merge Commit Message Script
+
+Use `~/.claude/skills/azure-devops/scripts/pr-merge-message.sh` to manage merge commit messages:
+
+```bash
+# Show what the merge commit message should be
+pr-merge-message.sh --org <ORG> --id <PR_ID> --show
+
+# Set auto-complete with squash, transition-work-items, AND merge commit message (recommended)
+pr-merge-message.sh --org <ORG> --id <PR_ID> --set-auto-complete
+
+# Validate current merge commit message matches expected format
+pr-merge-message.sh --org <ORG> --id <PR_ID> --validate
+
+# Set only the merge commit message (without auto-complete flags)
+pr-merge-message.sh --org <ORG> --id <PR_ID> --set
+```
+
+Expected format:
+```
+Merged PR {id}: {title}
+
+{description}
+```
 
 **Note**: The repo might be in a different project than the work items. Cross-project linking still works.
 
@@ -281,3 +320,22 @@ Azure DevOps hierarchy (top to bottom):
 ## Work Item Linking
 
 Work items are automatically linked when referenced in PR description with `#1234` syntax.
+
+## Pipelines
+
+```bash
+# List recent pipeline runs - ALWAYS use --query-order QueueTimeDesc for fresh results
+az pipelines runs list --project <Project> --query-order QueueTimeDesc --top 10 -o table
+
+# List runs for specific pipeline
+az pipelines runs list --project <Project> --pipeline-ids <PipelineId> --query-order QueueTimeDesc -o table
+
+# Show specific run
+az pipelines runs show --project <Project> --id <RunId> -o json
+```
+
+**CRITICAL**: Always use `--query-order QueueTimeDesc` when listing pipeline runs. Without this flag, the API may return cached/stale results and miss recently queued or in-progress runs. This is especially important when checking if a pipeline was triggered or monitoring ongoing builds.
+
+### Multi-Stage Pipelines
+
+Multi-stage pipelines (e.g., with approval gates) show as "inProgress" until ALL stages complete, including those awaiting manual approval. There is no direct filter for "actively running" vs "awaiting approval" - you must check the individual run details.
