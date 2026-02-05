@@ -2,11 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(./ecosystem/scripts/check-wip.sh:*)",
-      "Bash(az boards area project list:*)",
-      "Bash(az boards iteration project list:*)",
-      "Bash(az boards query:*)",
+      "Bash(~/.claude/skills/*/scripts/*.sh)",
+      "Bash(az * --help *)",
+      "Bash(az * --help)",
+      "Bash(az * list *)",
+      "Bash(az * query *)",
+      "Bash(az * show *)",
+      "Bash(az rest --method GET:*)",
       "Bash(git diff:*)",
       "Bash(git fetch:*)",
+      "Bash(git log:*)",
+      "Bash(git merge-base:*)",
+      "Bash(git rev-parse:*)",
       "Bash(git show:*)",
       "Bash(pnpm audit:*)",
       "Bash(pnpm build:*)",
@@ -16,10 +23,10 @@
       "Bash(pnpm type-check:*)",
       "Bash(pnpm why:*)",
       "Read(~/.claude/CLAUDE.md)",
+      "Read(~/.claude/settings.json)",
       "Read(~/.claude/skills/**)",
       "WebFetch(domain:next.shadcn-svelte.com)",
-      "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(~/.claude/skills/*/scripts/*.sh)"
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [
       "Edit(**/package.json)",

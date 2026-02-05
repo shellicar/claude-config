@@ -1,7 +1,6 @@
 ---
 name: ado-backlog-columns
 description: Configure consistent backlog column options across all teams in an Azure DevOps project
-user-invocable: true
 ---
 
 # Azure DevOps Backlog Column Configuration
@@ -79,7 +78,29 @@ Common category keys:
 
 Note: Categories may vary by project. Query existing column options to discover available categories. The PBI backlog uses `ProductBacklogColumnOptions` as the settings key, not the expected `Microsoft.RequirementCategory`.
 
+## Field IDs Are Process-Specific
+
+**IMPORTANT**: Field IDs for fields like Start Date and Target Date are **process-specific**, not universal.
+
+Each process (including custom processes cloned from Scrum) gets its own field IDs assigned. You cannot use hardcoded IDs across different projects that use different processes.
+
+**Known process field IDs**:
+
+| Process | Start Date | Target Date |
+|---------|------------|-------------|
+| Eagers | 23873555 | 23873544 |
+| Hope Ventures | 37524899 | 37524888 |
+
+**To discover field IDs for a new project**:
+1. Manually configure one backlog view in the UI with Start Date and Target Date columns
+2. Query that team's column options via API
+3. Extract the field IDs from the response
+
+**Note**: Field IDs are embedded in server-side rendered page content, not exposed via a public REST API. The UI uses this SSR data when you add columns, which is why manual configuration followed by API query is required.
+
 ## Column JSON Templates
+
+Replace `{START_DATE_ID}` and `{TARGET_DATE_ID}` with the process-specific field IDs.
 
 ### With Parent (11 columns)
 ```json
@@ -92,8 +113,8 @@ Note: Categories may vary by project. Query existing column options to discover 
   {"id":-7,"name":"System.AreaPath","text":"Area Path","fieldType":8,"width":100},
   {"id":-105,"name":"System.IterationPath","text":"Iteration Path","fieldType":8,"width":100},
   {"id":24,"name":"System.AssignedTo","text":"Assigned To","fieldType":1,"width":100},
-  {"id":23873555,"name":"Microsoft.VSTS.Scheduling.StartDate","text":"Start Date","fieldType":3,"width":100},
-  {"id":23873544,"name":"Microsoft.VSTS.Scheduling.TargetDate","text":"Target Date","fieldType":3,"width":100},
+  {"id":{START_DATE_ID},"name":"Microsoft.VSTS.Scheduling.StartDate","text":"Start Date","fieldType":3,"width":100},
+  {"id":{TARGET_DATE_ID},"name":"Microsoft.VSTS.Scheduling.TargetDate","text":"Target Date","fieldType":3,"width":100},
   {"id":80,"name":"System.Tags","text":"Tags","fieldType":5,"width":100}
 ]
 ```
@@ -108,19 +129,22 @@ Note: Categories may vary by project. Query existing column options to discover 
   {"id":-7,"name":"System.AreaPath","text":"Area Path","fieldType":8,"width":100},
   {"id":-105,"name":"System.IterationPath","text":"Iteration Path","fieldType":8,"width":100},
   {"id":24,"name":"System.AssignedTo","text":"Assigned To","fieldType":1,"width":100},
-  {"id":23873555,"name":"Microsoft.VSTS.Scheduling.StartDate","text":"Start Date","fieldType":3,"width":100},
-  {"id":23873544,"name":"Microsoft.VSTS.Scheduling.TargetDate","text":"Target Date","fieldType":3,"width":100},
+  {"id":{START_DATE_ID},"name":"Microsoft.VSTS.Scheduling.StartDate","text":"Start Date","fieldType":3,"width":100},
+  {"id":{TARGET_DATE_ID},"name":"Microsoft.VSTS.Scheduling.TargetDate","text":"Target Date","fieldType":3,"width":100},
   {"id":80,"name":"System.Tags","text":"Tags","fieldType":5,"width":100}
 ]
 ```
 
 ## Workflow
 
-1. Query all teams in the project
-2. For each team, query existing column options to discover categories
-3. For the main team (project-level), apply Initiative (no Parent) and Epics (with Parent)
-4. For sub-teams, apply Features and PBIs (both with Parent)
-5. Verify by querying column options after applying
+1. **Check for known field IDs**: Look up the project in the known process field IDs table above
+2. **If unknown, discover field IDs**: Query existing column options from any team in the project. If Start Date/Target Date columns aren't configured yet, ask the user to add them to one backlog view in the UI, then query again to extract the IDs
+3. **Query all teams** in the project
+4. For each team, query existing column options to discover available categories
+5. **Apply columns** using the discovered field IDs:
+   - Initiative/top-level: No Parent column
+   - Epics, Features, PBIs: Include Parent column
+6. Verify by querying column options after applying
 
 ## Notes
 

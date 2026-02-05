@@ -158,7 +158,7 @@ az repos pr update --id <ID> --description "$(cat description.md)"
 # Create PR
 az repos pr create --title "Title" --description "$(cat description.md)" --source-branch <branch> --target-branch main
 
-# Set auto-complete
+# Set auto-complete (always do this after creating PR)
 az repos pr update --id <ID> --auto-complete true
 
 # Link work items to PR (via work item feature, not description)
@@ -171,6 +171,8 @@ az repos pr work-item add --id <PR_ID> --work-items <WI_ID1> <WI_ID2>
 - **Tasks**: Link via the work item feature using `az repos pr work-item add`
 
 This keeps the description clean while still associating all related work.
+
+**Auto-complete**: CONFIRM WITH USER before setting. The merge strategy (squash vs merge) may need to be configured in Azure DevOps UI or via `--squash` flag - verify correct settings before using.
 
 **Note**: The repo might be in a different project than the work items. Cross-project linking still works.
 
@@ -256,6 +258,15 @@ Refactored to give static errors when unmapped types are added.
 The bad example reads like disconnected notes. The good example states what was done in clear sentences.
 
 Say what it is without saying how you did it. Don't abstract things, don't dumb it down, don't try to sound smart.
+
+### Task Titles
+
+Task titles should describe the **effect** or **goal**, not the implementation:
+
+**Good**: `Recalculate group status when facilitator licence changes`
+**Bad**: `Add handleFacilitator to ProgramGroupViewProcessor`
+
+Stakeholders read these titles - focus on what changes from their perspective, not what code you're writing.
 
 ## Work Item Hierarchy
 
