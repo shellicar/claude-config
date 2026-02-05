@@ -20,13 +20,47 @@ Match when:
 - **CLI**: `az repos` and `az boards`
 - **Reference**: See `azure-devops` skill for CLI command syntax
 
-## Branch Naming
+## Branch Strategy
 
-Project-specific (varies by project):
-- `epic/<name>`
-- `feature/<name>`
-- `fix/<name>`
-- `fix/<work-item-id>/<name>`
+### Long-Lived Branches
+- `epic/<name>` - Long-lived integration branch for large initiatives. Feature branches merge into this, then eventually merges to main.
+- `main` - Production branch
+
+### Short-Lived Branches (branch from epic or main)
+- `feature/<feature-name>/<pbi-name>` - For new work under a feature
+- `fix/<name>` - Bug fixes
+- `fix/<work-item-id>/<name>` - Bug fixes linked to work item
+
+### Workflow
+
+**Key principle**: The branch you branch FROM is your PR target.
+
+**With epic branch (large initiative):**
+```
+main ← PR target for epic branches
+  └─ epic/<epic-name> ← PR target for feature branches under this epic
+       ├─ feature/<feature-name>/<pbi-name>
+       ├─ feature/<feature-name>/<another-pbi>
+       └─ ...
+```
+
+**Without epic branch (smaller work):**
+```
+main ← PR target for feature branches
+  ├─ feature/<feature-name>/<pbi-name>
+  ├─ feature/<feature-name>/<another-pbi>
+  └─ ...
+```
+
+- Branch from `main` → PR into `main`
+- Branch from `epic/*` → PR into that `epic/*` (treat epic as "main" for this work)
+
+When the epic is complete, PR the epic branch into `main`.
+
+### Branch Naming Rules
+- No work item IDs in branch names (IDs can change, work can be reassigned)
+- Work item linking belongs in PRs, not branch names
+- Use descriptive kebab-case names
 
 ## Commit Messages
 

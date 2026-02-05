@@ -1,11 +1,5 @@
 {
   "permissions": {
-    "deny": [
-      "Edit(**/package.json)",
-      "Write(**/package.json)",
-      "Edit(~/.claude/settings.json)",
-      "Write(~/.claude/settings.json)"
-    ],
     "allow": [
       "Bash(./ecosystem/scripts/check-wip.sh:*)",
       "Bash(az boards area project list:*)",
@@ -21,10 +15,17 @@
       "Bash(pnpm test:*)",
       "Bash(pnpm type-check:*)",
       "Bash(pnpm why:*)",
-      "Read(//home/stephen/.claude/CLAUDE.md)",
-      "Read(//Users/shellicar/.claude/skills/**)",
+      "Read(~/.claude/CLAUDE.md)",
+      "Read(~/.claude/skills/**)",
       "WebFetch(domain:next.shadcn-svelte.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(~/.claude/skills/*/scripts/*.sh)"
+    ],
+    "deny": [
+      "Edit(**/package.json)",
+      "Write(**/package.json)",
+      "Edit(~/.claude/settings.json)",
+      "Write(~/.claude/settings.json)"
     ]
   },
   "hooks": {
