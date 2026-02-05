@@ -1,15 +1,30 @@
 {
   "permissions": {
+    "deny": [
+      "Edit(**/package.json)",
+      "Write(**/package.json)",
+      "Edit(~/.claude/settings.json)",
+      "Write(~/.claude/settings.json)"
+    ],
     "allow": [
-      "WebFetch(domain:next.shadcn-svelte.com)",
-      "Read(//home/stephen/.claude/CLAUDE.md)",
-      "Bash(pnpm run type-check:*)",
-      "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(./ecosystem/scripts/check-wip.sh:*)",
+      "Bash(az boards area project list:*)",
+      "Bash(az boards iteration project list:*)",
+      "Bash(az boards query:*)",
+      "Bash(git diff:*)",
       "Bash(git fetch:*)",
+      "Bash(git show:*)",
       "Bash(pnpm audit:*)",
+      "Bash(pnpm build:*)",
       "Bash(pnpm outdated:*)",
-      "Bash(pnpm why:*)"
+      "Bash(pnpm run type-check:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm why:*)",
+      "Read(//home/stephen/.claude/CLAUDE.md)",
+      "Read(//Users/shellicar/.claude/skills/**)",
+      "WebFetch(domain:next.shadcn-svelte.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
   "hooks": {
