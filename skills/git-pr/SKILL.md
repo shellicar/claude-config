@@ -1,5 +1,5 @@
 ---
-name: pr
+name: git-pr
 description: Create or update a pull request with a summary of all changes since the ancestor branch
 allowed-tools: Bash(~/.claude/skills/git-pr/scripts/*)
 ---

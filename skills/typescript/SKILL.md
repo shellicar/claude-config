@@ -242,61 +242,7 @@ const myObject: MyType = {}; // When you need the variable's type to be widened 
 
 These guidelines apply when writing or modifying test files (*.spec.ts). The goal is **maximum maintainability** - tests verify the **intended behavior** (how we want the system to work), not the current or expected behavior of the implementation. Clear tests make debugging failures straightforward.
 
-### NEVER Mix Test and Production Code Changes (CRITICAL)
-
-**ABSOLUTE RULE**: You must do ONE or the OTHER - never both together.
-
-**Two Modes - Mutually Exclusive:**
-
-1. **TDD Mode** (writing/modifying tests):
-   - You **ONLY** modify test code
-   - You **DO NOT** modify production code
-   - Tests define what the behavior SHOULD be
-
-2. **Implementation Mode** (writing/modifying production code):
-   - You **ONLY** modify production code
-   - You **DO NOT** modify test code
-   - Tests verify the implementation is correct
-
-**Why this rule exists:**
-
-- If you change both together, there is **literally no way to verify anything**
-- Tests are the specification - production code is the implementation
-- Changing both simultaneously destroys the ability to validate correctness
-- You cannot know if behavior is correct when you changed the definition of "correct" at the same time
-
-**Bug Fix Workflow (TDD):**
-
-1. **Step 1 - TDD Mode**: Write/modify tests FIRST to expose the bug (tests should FAIL)
-2. **Step 2 - Implementation Mode**: Fix production code to make tests pass
-
-These are TWO SEPARATE steps. Complete step 1, run tests, confirm failure, THEN move to step 2.
-
-**What this means in practice:**
-
-- When fixing a bug: write failing tests FIRST, then fix implementation
-- When implementing a feature: write failing tests FIRST, then implement
-- If tests unexpectedly fail during implementation: **STOP** and report - do NOT modify tests
-- You **MUST** ask which mode/step you are in if unclear
-
-**Verification in Teapot Mode:**
-
-- If you modified both test and production code in the same task: you are brewing (*glug glug glug*)
-- This is a **protocol violation**, not a coding mistake
-
-### Tests Are Specification, Not Documentation (CRITICAL MINDSET)
-
-**IMPORTANT**: We often follow TDD (Test-Driven Development) - tests are written FIRST, before implementation.
-
-When writing tests, the system likely behaves differently than what we intend. Therefore:
-
-- **NEVER copy or follow what the current implementation does**
-- **ALWAYS ask: "What SHOULD this do?" not "What DOES this do?"**
-- Tests define the requirements/specification
-- Tests verify that the system behaves as intended
-- When implementation and tests disagree, the tests define correctness (assuming tests represent intended behavior)
-
-**This is a fundamental shift**: Tests are not documentation of current behavior - they are the definition of correct behavior.
+> **Testing Workflow**: The `/tdd` skill applies to ALL testing work. You MUST follow it whenever tests are involved.
 
 ### Single Assertion Per Test (MUST)
 

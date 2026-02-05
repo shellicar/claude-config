@@ -1,5 +1,5 @@
 ---
-name: commit
+name: git-commit
 description: Create a git commit with a concise message based on staged changes
 ---
 
