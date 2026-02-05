@@ -157,7 +157,22 @@ az repos pr update --id <ID> --description "$(cat description.md)"
 
 # Create PR
 az repos pr create --title "Title" --description "$(cat description.md)" --source-branch <branch> --target-branch main
+
+# Set auto-complete
+az repos pr update --id <ID> --auto-complete true
+
+# Link work items to PR (via work item feature, not description)
+az repos pr work-item add --id <PR_ID> --work-items <WI_ID1> <WI_ID2>
 ```
+
+## Linking Work Items to PRs
+
+- **PBI**: Link in the PR description using `#1234` syntax
+- **Tasks**: Link via the work item feature using `az repos pr work-item add`
+
+This keeps the description clean while still associating all related work.
+
+**Note**: The repo might be in a different project than the work items. Cross-project linking still works.
 
 ## PR Markdown Formatting
 
@@ -183,6 +198,64 @@ Work item links (`#1234`) render with full metadata (title, status badge). For c
 - #1234
 - #5678
 ```
+
+## Work Item Description Formatting
+
+**IMPORTANT**: Work item descriptions MUST use HTML format, unless the field has been explicitly converted to markdown via the UI toggle.
+
+### Check Format First
+
+Query the work item to check if markdown is enabled:
+```bash
+az boards work-item show --id <ID> -o json | jq '{multilineFieldsFormat}'
+```
+
+- If `multilineFieldsFormat` is missing or doesn't include `"System.Description": "markdown"` → use HTML
+- If `"System.Description": "markdown"` is present → use markdown
+
+### HTML Format (Default)
+
+- Wrap each line in `<div>` tags for proper line breaks
+- Use `<div><br></div>` for blank lines between paragraphs
+- Plain newlines in the CLI won't render as line breaks
+
+**Example:**
+```bash
+az boards work-item update --id <ID> --fields "System.Description=<div>First line.</div><div><br></div><div>Second paragraph.</div><div>Third line.</div>"
+```
+
+**Renders as:**
+```
+First line.
+
+Second paragraph.
+Third line.
+```
+
+### Markdown Format (When Enabled)
+
+If the description field has been converted to markdown, use standard markdown syntax with newlines.
+
+### Writing Style
+
+Write descriptions like a professional speaking to a colleague, not notes or bullet points.
+
+**DO**:
+```
+Handle js-joda types from the create buy a car schema.
+Refactor to use record based mapping and fix the date formatting.
+```
+
+**DON'T**:
+```
+Schema now uses js-joda types.
+mapToJson must handle them.
+Refactored to give static errors when unmapped types are added.
+```
+
+The bad example reads like disconnected notes. The good example states what was done in clear sentences.
+
+Say what it is without saying how you did it. Don't abstract things, don't dumb it down, don't try to sound smart.
 
 ## Work Item Hierarchy
 
