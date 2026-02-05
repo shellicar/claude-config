@@ -1,6 +1,6 @@
 ---
 name: flightrac-conventions
-description: Git conventions for Flightrac projects (Azure DevOps)
+description: Git conventions for Flightrac on Azure DevOps. Loaded when detected as the active convention.
 user-invocable: false
 ---
 

@@ -8,6 +8,14 @@ user-invocable: false
 
 These instructions apply **only to code you are actively modifying**. Do not fix pre-existing violations in other parts of the file unless explicitly asked.
 
+## Quick Reference
+
+- **Banned**: `as any`, `any` for declarations - must request approval first
+- **Iterative**: Write code → let TypeScript error → fix → repeat
+- **Testing**: Use `satisfies` for test data, functional factories over classes
+- **Re-exports**: Banned except for `index.ts` in npm packages
+- **Temporal**: Use `Temporal.Instant` (timestamps), `Temporal.PlainDate` (dates)
+
 ## Banned Types
 
 The following TypeScript types are **BANNED** for type DECLARATIONS without explicit approval:

@@ -1,12 +1,21 @@
 ---
 name: github-release
-description: Create a GitHub release to trigger npm publish workflow
+description: Create a GitHub release to trigger npm publish. Use when publishing a release, cutting a new version, or releasing to npm.
 user-invocable: true
 ---
 
 # GitHub Release
 
 Create a GitHub release for an npm package, triggering the npm-publish workflow.
+
+## Quick Start
+
+```bash
+# 1. Verify version exists in package.json and CHANGELOG
+# 2. Ensure PR is merged and main is up to date
+# 3. Create release (no 'v' prefix for @shellicar repos)
+gh release create "1.2.1" --title "1.2.1" --generate-notes
+```
 
 ## Context Awareness
 
@@ -45,7 +54,7 @@ Use `AskUserQuestion` to ask which repo to release, listing available repos.
 ### 2. Detect Convention
 
 ```bash
-~/.claude/skills/git-pr/scripts/detect-convention.sh
+~/.claude/skills/github-pr/scripts/detect-convention.sh
 ```
 
 Must be a GitHub repo (shellicar or shellicar-oss convention).
@@ -182,7 +191,7 @@ Report milestone closed to user.
 
 **Typical flow:**
 ```
-maintenance-release → version-management → git-commit → git-pr → [PR merged] → github-release
+maintenance-release → github-version → git-commit → github-pr → [PR merged] → github-release
 ```
 
 When called after other skills, version context flows through the conversation - no need to re-discover.

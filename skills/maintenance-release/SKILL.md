@@ -1,11 +1,23 @@
 ---
 name: maintenance-release
-description: Perform maintenance release with security fixes and dependency updates
+description: Perform maintenance release with security fixes and dependency updates. Use when updating dependencies, applying security patches, or doing routine maintenance.
 ---
 
 # Maintenance Release Workflow
 
 Perform a maintenance release by gathering security and dependency information, proposing a recommended plan, and executing after user refinement.
+
+## Quick Start
+
+```
+1. Verify preconditions (clean tree, on main, synced)
+2. Run `pnpm audit` and `pnpm outdated`
+3. Present findings and propose update plan
+4. Execute: `pnpm update` or targeted updates
+5. Run `pnpm build && pnpm test`
+6. Optionally invoke `github-version` for release
+7. Commit and create PR via `github-pr`
+```
 
 ## Scope
 
@@ -358,11 +370,11 @@ Run if present, skip if not.
 
 ### 4.5 Version and Changelog (optional)
 
-Version bumping and CHANGELOG.md updates are handled by the `version-management` skill.
+Version bumping and CHANGELOG.md updates are handled by the `github-version` skill.
 
 **Two workflow options:**
 
-1. **Same PR**: After verification passes, invoke `version-management` skill, then create a second commit for version changes
+1. **Same PR**: After verification passes, invoke `github-version` skill, then create a second commit for version changes
 2. **Separate PR**: Commit changes now, merge, then do version management in a separate PR when ready to release
 
 Use `AskUserQuestion` to confirm:
@@ -371,7 +383,7 @@ Use `AskUserQuestion` to confirm:
 Verification passed. Changes are ready.
 
 Would you like to:
-1. Include version bump in this PR (invoke version-management)
+1. Include version bump in this PR (invoke github-version)
 2. Commit changes only (version management later, separate PR)
 ```
 
@@ -426,10 +438,10 @@ Changes are ready to commit.
 
 Would you like to:
 1. Commit only (I'll create PR later)
-2. Commit and create PR (invoke git-pr skill)
+2. Commit and create PR (invoke github-pr skill)
 ```
 
-If user chooses PR, delegate to the `git-pr` skill.
+If user chooses PR, delegate to the `github-pr` skill.
 
 ## Notes
 

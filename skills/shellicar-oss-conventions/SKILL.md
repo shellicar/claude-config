@@ -1,6 +1,6 @@
 ---
 name: shellicar-oss-conventions
-description: Git conventions for @shellicar published npm packages (GitHub)
+description: Git conventions for @shellicar npm packages. Loaded when detected as the active convention.
 user-invocable: false
 ---
 

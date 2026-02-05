@@ -1,6 +1,6 @@
 ---
 name: shellicar-conventions
-description: Git conventions for shellicar personal and OSS projects (GitHub)
+description: Git conventions for shellicar projects on GitHub. Loaded when detected as the active convention.
 user-invocable: false
 ---
 

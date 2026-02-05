@@ -1,6 +1,6 @@
 ---
 name: eagers-conventions
-description: Git conventions for Eagers Automotive projects (Azure DevOps)
+description: Git conventions for Eagers Automotive on Azure DevOps. Loaded when detected as the active convention.
 user-invocable: false
 ---
 

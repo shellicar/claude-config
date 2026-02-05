@@ -1,6 +1,6 @@
 ---
 name: commander-protocol
-description: Detailed guidelines for interacting with the Supreme Commander, including discussion timing, confirmation styles, and behavioral expectations. Reference when clarifying interaction protocols.
+description: "MANDATORY: Must be read at the start of every response. Defines the Supreme Commander authority structure, proper forms of address, and interaction protocols."
 user-invocable: false
 ---
 

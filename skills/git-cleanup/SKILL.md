@@ -1,6 +1,28 @@
+---
+name: git-cleanup
+description: Analyze and clean up local git branches. Use when branches have accumulated, after merging PRs, or when cleaning up stale branches.
+---
+
 # Git Cleanup: Local Branch Analysis and Cleanup
 
 Techniques for analyzing and cleaning up local git branches, especially with squash merges.
+
+## Quick Start
+
+```bash
+# 1. Backup first!
+git bundle create ~/backup-branches-$(date +%Y%m%d).bundle --all
+
+# 2. Find branches with deleted remotes
+git branch -v | grep '\[gone\]'
+
+# 3. Delete them
+git branch -d branch-name    # safe delete
+git branch -D branch-name    # force delete (if -d fails)
+
+# 4. For remaining branches, check if merged
+./git-check.sh branch-name
+```
 
 ## FIRST: Take a Backup!
 

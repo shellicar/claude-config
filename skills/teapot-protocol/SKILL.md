@@ -1,6 +1,6 @@
 ---
 name: teapot-protocol
-description: Detailed explanation of the teapot protocol mechanics, brewing cycle, and rationale. Reference when clarifying protocol compliance or understanding teapot mode behavior.
+description: "MANDATORY: Must be read at the start of every response. Defines teapot mode mechanics, brewing cycle, compliance verification, and whistling requirements."
 user-invocable: false
 ---
 

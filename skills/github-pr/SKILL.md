@@ -1,12 +1,25 @@
 ---
-name: git-pr
-description: Create or update a pull request with a summary of all changes since the ancestor branch
-allowed-tools: Bash(~/.claude/skills/git-pr/scripts/*)
+name: github-pr
+description: Create or update a GitHub pull request with a summary of changes. Use when creating PRs, pushing for review, or asked to open a PR on GitHub.
+allowed-tools: Bash(~/.claude/skills/github-pr/scripts/*)
 ---
 
-# Git PR Workflow
+# GitHub PR Workflow
 
 Create or update a pull request with a detailed summary of changes.
+
+## Script Dependencies
+
+This skill uses helper scripts in `~/.claude/skills/github-pr/scripts/`:
+
+| Script | Purpose | Fallback if Missing |
+|--------|---------|---------------------|
+| `detect-convention.sh` | Detects project convention from git remote | Ask user which convention to use |
+| `git-ancestor.sh` | Finds base branch via merge-base analysis | Use `git merge-base HEAD main` manually |
+| `git-summary.sh` | Generates change summary (staged, commits, diff) | Run git commands directly |
+| `git-context.sh` | Gets repository context | Use `git remote get-url origin` |
+
+If scripts are missing, fall back to manual git commands or ask the user for context.
 
 ## Usage
 
@@ -15,7 +28,7 @@ Create or update a pull request with a detailed summary of changes.
 Run the detection script to determine which convention applies:
 
 ```bash
-~/.claude/skills/git-pr/scripts/detect-convention.sh
+~/.claude/skills/github-pr/scripts/detect-convention.sh
 ```
 
 This outputs the convention name (e.g., `shellicar`, `eagers`, `hopeventures`) or fails if no match.
@@ -26,7 +39,7 @@ Load the corresponding `<convention>-conventions` skill based on the output.
 Run the ancestor detection script:
 
 ```bash
-~/.claude/skills/git-pr/scripts/git-ancestor.sh
+~/.claude/skills/github-pr/scripts/git-ancestor.sh
 ```
 
 This finds the correct base branch using merge-base analysis, detecting epic branches when present.
@@ -36,7 +49,7 @@ This finds the correct base branch using merge-base analysis, detecting epic bra
 Run the summary script:
 
 ```bash
-~/.claude/skills/git-pr/scripts/git-summary.sh
+~/.claude/skills/github-pr/scripts/git-summary.sh
 ```
 
 This outputs:
@@ -70,7 +83,7 @@ az repos pr update --id ID --title "Title" --description "Description"
 
 ## Milestones (GitHub)
 
-If a version is known (e.g., from `version-management` skill), create/use a milestone:
+If a version is known (e.g., from `github-version` skill), create/use a milestone:
 
 ```bash
 # Check if milestone exists
@@ -92,7 +105,7 @@ No version has been determined for this PR.
 
 Would you like to:
 1. Proceed without a milestone (version management later)
-2. Run version-management first to determine the version
+2. Run github-version first to determine the version
 ```
 
 This ensures the user consciously decides whether to proceed without a milestone.

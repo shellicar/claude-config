@@ -1,11 +1,22 @@
 ---
-name: version-management
-description: Determine next version and update CHANGELOG for releases
+name: github-version
+description: Determine next version and update CHANGELOG for @shellicar npm packages. Use when bumping versions, preparing a release, or updating the changelog.
 ---
 
-# Version Management
+# GitHub Version Management
 
 Determine the next version number and update CHANGELOG.md for a release.
+
+## Quick Start
+
+```
+1. Get current version from package.json or git tags
+2. Determine bump type: patch (fixes/deps), minor (features), major (breaking)
+3. Confirm version with user via AskUserQuestion
+4. Update CHANGELOG.md with new version section
+5. Bump version in package.json
+6. Stage changes (don't commit - let caller handle)
+```
 
 ## Scope
 
@@ -214,8 +225,8 @@ Do NOT commit - let the calling workflow handle commits.
 
 This skill is **independent and composable**. It can be called:
 
-- **Same PR as changes**: `maintenance-release` → `version-management` → `git-commit` → `git-pr`
-- **Separate PR**: Changes merged first, then `version-management` → `git-commit` → `git-pr` when ready to release
+- **Same PR as changes**: `maintenance-release` → `github-version` → `git-commit` → `github-pr`
+- **Separate PR**: Changes merged first, then `github-version` → `git-commit` → `github-pr` when ready to release
 
 ### Why Separate PRs?
 
@@ -228,7 +239,7 @@ This skill is **independent and composable**. It can be called:
 
 - `maintenance-release` - optionally, after verification passes
 - Standalone - when ready to release accumulated changes
-- `git-pr` - may check if version is known for milestone
+- `github-pr` - may check if version is known for milestone
 
 ## Notes
 

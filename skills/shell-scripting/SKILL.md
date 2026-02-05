@@ -1,12 +1,22 @@
 ---
 name: shell-scripting
-description: Guidelines for writing portable, POSIX-compliant shell scripts
+description: Guidelines for portable, POSIX-compliant shell scripts. Apply when writing, reviewing, or modifying shell scripts or .sh files.
 user-invocable: false
 ---
 
 # Shell Scripting Guidelines
 
 Write portable shell scripts that work across systems.
+
+## Quick Reference
+
+| Use This (POSIX) | Not This (Bash) |
+|------------------|-----------------|
+| `#!/bin/sh` | `#!/bin/bash` |
+| `[ -z "$VAR" ]` | `[[ -z "$VAR" ]]` |
+| `[ "$A" = "B" ]` | `[[ "$A" == "B" ]]` |
+| `$(command)` | `` `command` `` |
+| `${VAR:-default}` | (same, this is POSIX) |
 
 ## Shebang
 

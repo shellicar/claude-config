@@ -1,6 +1,6 @@
 ---
 name: shellicar-config-conventions
-description: Git conventions for personal config repos (GitHub, no PRs)
+description: Git conventions for personal config repos (no PRs). Loaded when detected as the active convention.
 user-invocable: false
 ---
 

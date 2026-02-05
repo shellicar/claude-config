@@ -1,6 +1,6 @@
 ---
 name: git-commit
-description: Create a git commit with a concise message based on staged changes
+description: Create a git commit with a concise message. Use when committing changes, asked to commit, or after completing a task.
 ---
 
 # Git Commit Workflow
@@ -38,7 +38,7 @@ Create a commit from staged changes with a concise, single-line message.
     Run the detection script:
 
     ```bash
-    ~/.claude/skills/git-pr/scripts/detect-convention.sh
+    ~/.claude/skills/github-pr/scripts/detect-convention.sh
     ```
 
     If it outputs a convention name, load the corresponding `<convention>-conventions` skill.

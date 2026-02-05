@@ -1,6 +1,6 @@
 ---
 name: ado-backlog-columns
-description: Configure consistent backlog column options across all teams in an Azure DevOps project
+description: Configure consistent backlog column options across ADO teams. Use when standardizing backlog views, setting up team boards, or configuring column options.
 ---
 
 # Azure DevOps Backlog Column Configuration
