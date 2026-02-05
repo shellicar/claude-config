@@ -6,7 +6,7 @@ user-invocable: false
 
 # Hope Ventures Conventions
 
-Git and PR conventions for Hope Ventures projects (projects).
+Git and PR conventions for Hope Ventures projects.
 
 ## Detection
 
@@ -31,7 +31,7 @@ Use `git switch -c <branch>` to create branches (not `git checkout` - it's block
 ## Direct Commits to Main
 
 The following repos allow direct commits to main (no branch required):
-- Repos ending with `-Documentation` 
+- Repos ending with `-Documentation`
 
 ## Commit Messages
 
