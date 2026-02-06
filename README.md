@@ -22,6 +22,7 @@ pnpm install
 - **typescript-standards** - TypeScript coding standards, banned types, and testing patterns
 - **tdd** - Test-Driven Development workflow enforcement
 - **shell-scripting** - POSIX-compliant shell scripting guidelines
+- **cli-tools** - Conventions for running CLI commands via the Bash tool
 
 ### Git Workflow Skills
 
@@ -53,7 +54,11 @@ Detected automatically based on remote URL and working directory:
 
 ### Utility Skills
 
-- **keybindings-help** - Keyboard shortcut customization
 - **skill-management** - Creating and maintaining skills
-- **skill-creator** - Guide for creating effective skills (installed via `pnpm skills`)
-- **find-skills** - Discover and install skills (installed via `pnpm skills`)
+
+### Installed Skills
+
+Installed from [skills.sh](https://skills.sh/) via `pnpm skills add`:
+
+- **skill-creator** - Guide for creating effective skills
+- **find-skills** - Discover and install skills
