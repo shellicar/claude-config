@@ -16,3 +16,7 @@
 !.claude/**
 
 !package.json
+!pnpm-lock.yaml
+!.nvmrc
+!README.md
+!CLAUDE.md
