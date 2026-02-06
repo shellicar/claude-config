@@ -13,6 +13,7 @@
       "Bash(git fetch:*)",
       "Bash(git log:*)",
       "Bash(git merge-base:*)",
+      "Bash(git rev-list:*)",
       "Bash(git rev-parse:*)",
       "Bash(git show:*)",
       "Bash(pnpm audit:*)",
@@ -30,8 +31,10 @@
     ],
     "deny": [
       "Edit(**/package.json)",
-      "Write(**/package.json)",
+      "Edit(~/.claude/hooks/**)",
       "Edit(~/.claude/settings.json)",
+      "Write(**/package.json)",
+      "Write(~/.claude/hooks/**)",
       "Write(~/.claude/settings.json)"
     ]
   },

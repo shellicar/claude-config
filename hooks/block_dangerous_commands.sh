@@ -21,6 +21,8 @@ block() {
 }
 
 check_all() {
+  block '\$\(' 'command substitution'
+  block '`' 'backtick substitution'
   block '\bpython[23]?\b' 'python'
   block '\bxargs\b' 'xargs'
   block '\bsed\b' 'sed'
@@ -75,6 +77,8 @@ test_blocked '{"command": "git push --force-with-lease"}' 'git push --force' '\b
 test_blocked '{"command": "git push origin main --force"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
 test_blocked '{"command": "git push -f"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
 test_blocked '{"command": "git -C /path push -f"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
+test_blocked '{"command": "git rev-list $(whoami)"}' 'command substitution' '\$\('
+test_blocked '{"command": "echo `whoami`"}' 'backtick substitution' '`'
 
 echo ""
 echo "=== Should NOT block ==="
@@ -88,6 +92,8 @@ test_allowed '{"content": "checkout process"}' 'git checkout' '\bgit\b.*\bchecko
 test_allowed '{"content": "reset the form"}' 'git reset' '\bgit\b.*\breset\b'
 test_allowed '{"command": "git push"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
 test_allowed '{"command": "git push origin main"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
+test_allowed '{"command": "git rev-list --count HEAD"}' 'command substitution' '\$\('
+test_allowed '{"command": "git log --oneline"}' 'backtick substitution' '`'
 
 echo ""
 echo "Passed: $PASS / Failed: $FAIL"
