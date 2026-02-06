@@ -97,14 +97,6 @@ Create a commit from staged changes with a concise, single-line message.
 
     Confirm the commit was created with the expected message.
 
-    Then check if the branch can be pushed cleanly:
-
-    ```bash
-    git rev-list --left-right --count @{u}...HEAD
-    ```
-
-    Output is `<behind>\t<ahead>`. If the first number (behind) is `0`, a regular `git push` will work. If it is non-zero, the branch has diverged from the remote — **STOP** and inform the user, as this may require manual intervention.
-
 11. **Pre-push review**
 
     List commits that will be pushed:
@@ -130,7 +122,15 @@ Create a commit from staged changes with a concise, single-line message.
 
     Report findings to the user before pushing.
 
-12. **Push**
+12. **Check for divergence**
+
+    ```bash
+    git rev-list --left-right --count @{u}...HEAD
+    ```
+
+    Output is `<behind>\t<ahead>`. If the first number (behind) is `0`, a regular `git push` will work. If it is non-zero, the branch has diverged from the remote — **STOP** and inform the user, as this may require manual intervention.
+
+13. **Push**
 
     ```bash
     git push
