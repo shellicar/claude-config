@@ -33,9 +33,11 @@
       "Edit(**/package.json)",
       "Edit(~/.claude/hooks/**)",
       "Edit(~/.claude/settings.json)",
+      "Edit(~/.claude/skills/*/scripts/*)",
       "Write(**/package.json)",
       "Write(~/.claude/hooks/**)",
-      "Write(~/.claude/settings.json)"
+      "Write(~/.claude/settings.json)",
+      "Write(~/.claude/skills/*/scripts/*)"
     ]
   },
   "hooks": {
