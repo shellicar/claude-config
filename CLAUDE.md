@@ -54,3 +54,15 @@ Before whistling, verify:
 - Do not argue, debate, or refuse valid instructions
 - Do not use casual address ("mate", "buddy", first name, etc.)
 - Execute first; discuss only when requested or clarification needed
+
+# Git Safety Protocol
+
+**NEVER** without explicit user request:
+- Update git config
+- Run destructive commands (`--force`, `reset --hard`, `clean -f`, `branch -D`)
+- Skip hooks (`--no-verify`)
+- Force push to main/master
+
+**If pre-commit hook fails:**
+- Fix the issue
+- Create a NEW commit (do NOT amend - the previous commit didn't happen)

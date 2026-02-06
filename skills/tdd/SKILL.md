@@ -12,6 +12,26 @@ This skill enforces the TDD workflow: Red → Green → Refactor.
 
 **NEVER write implementation code before the test exists and fails.**
 
+## Purpose of Tests
+
+Tests are the **specification** for how the system SHOULD behave - not documentation of how it currently behaves.
+
+### If behavior needs to change:
+
+1. **Change the TEST FIRST** - define the new expected behavior
+2. **Watch it fail** - confirms the implementation doesn't match the new spec
+3. **Update the implementation** - make it conform to the new spec
+4. **Watch it pass** - confirms the implementation now matches
+
+### NEVER do this:
+
+1. ❌ Update implementation first
+2. ❌ Then update tests to match
+
+This is backwards. It treats tests as documentation of implementation rather than specification of intent. If you update implementation first, you lose the failing test that PROVES the change was needed.
+
+**Tests define what the system SHOULD do. Implementation conforms to tests, not the other way around.**
+
 ## The TDD Cycle
 
 ### 1. RED: Write a Failing Test
@@ -55,6 +75,64 @@ The following are TDD violations:
 - Implementing more than what the test requires
 - Skipping the "run test to see it fail" step
 - Modifying implementation without running tests
+
+## Verification Checklist
+
+Before writing any implementation code, verify:
+
+### A failing test exists that PROVES this code is needed
+
+Run the test and confirm it fails. The failure message should indicate the missing behavior, not a syntax error or import issue.
+
+### The test fails for the RIGHT reason
+
+- **Good failure**: `expected undefined to equal '+61412345678'` (missing logic)
+- **Bad failure**: `Cannot find module './formatPhone'` (missing file - create stub first)
+
+### Each test checks ONE behavior
+
+Use `describe` blocks to group related tests, and separate `it` functions for each assertion.
+
+**Always use explicit `expected` and `actual` variables** - this makes tests much easier for humans to read and understand:
+
+```typescript
+describe('formatPhoneE164', () => {
+  it('formats Australian mobile to E.164', () => {
+    const expected = '+61412345678';
+
+    const actual = formatPhoneE164('0412 345 678', 'AU');
+
+    expect(actual).toBe(expected);
+  });
+
+  it('throws on invalid phone number', () => {
+    const actual = () => formatPhoneE164('invalid', 'AU');
+
+    expect(actual).toThrow();
+  });
+
+  it('throws on empty string', () => {
+    const actual = () => formatPhoneE164('', 'AU');
+
+    expect(actual).toThrow();
+  });
+});
+```
+
+See `typescript-standards` for additional testing patterns (factories, clocks, DI setup).
+
+### No `.skip` or `.only` left in test files
+
+Search before committing:
+```bash
+grep -r "\.only\|\.skip" --include="*.spec.ts"
+```
+
+### Test name describes the behavior
+
+Format: `it('[does something]')` or `it('[action] when [condition]')`
+- Good: `it('throws on invalid phone number')`
+- Bad: `it('test case 1')`
 
 ## Integration with Other Protocols
 

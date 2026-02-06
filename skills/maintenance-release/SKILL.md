@@ -351,6 +351,12 @@ pnpm biome ci
 # or: pnpm biome check
 # or: pnpm biome check --fix
 
+[ -x node_modules/.bin/knip ] && pnpm knip
+[ -x node_modules/.bin/dpdm ] && pnpm circular
+
+# If script fails but binary exists, check package.json scripts.
+# Package may be installed without a script configured - use AskUserQuestion.
+
 pnpm test      # run tests
 pnpm build     # verify build
 ```

@@ -8,3 +8,11 @@
 
 !**/.gitignore
 !settings.json
+
+!.agents/
+!.agents/**
+
+!.claude/
+!.claude/**
+
+!package.json

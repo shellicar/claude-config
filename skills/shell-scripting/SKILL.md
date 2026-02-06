@@ -297,6 +297,27 @@ echo $variable
 command $arg1 $arg2
 ```
 
+## Validation
+
+Check scripts with ShellCheck in POSIX mode:
+
+```sh
+# If installed locally
+shellcheck -s sh script.sh
+
+# Via Docker
+docker run --rm -v "$PWD:/mnt" koalaman/shellcheck:stable -s sh /mnt/script.sh
+```
+
+## Security
+
+Use `--` to separate options from arguments (prevents injection):
+
+```sh
+rm -- "$file"
+grep -- "$pattern" "$file"
+```
+
 ## Script Template
 
 ```sh

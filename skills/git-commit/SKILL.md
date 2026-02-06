@@ -63,6 +63,7 @@ Create a commit from staged changes with a concise, single-line message.
     - Concise, single line
     - Imperative mood ("Add feature" not "Added feature")
     - No period at end
+    - Keep under 50 characters (hard limit: 72)
     - Detail belongs in PRs, not commits
 
 7. **Show the user the proposed commit message and ask for confirmation**
@@ -75,7 +76,15 @@ Create a commit from staged changes with a concise, single-line message.
     git commit -m "message"
     ```
 
-9. **Push**
+9. **Verify commit**
+
+    ```bash
+    git log -1 --format="%h %s"
+    ```
+
+    Confirm the commit was created with the expected message.
+
+10. **Push**
 
     ```bash
     git push

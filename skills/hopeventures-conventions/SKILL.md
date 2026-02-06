@@ -70,9 +70,19 @@ Brief description of the changes - focus on "why" and "what", not implementation
 
 ## Work Item Linking
 
-- **Format**: `#1234` (Azure DevOps auto-links)
-- **In PR description**: Required
-- **In commits**: Optional
+Two types of linking serve different purposes:
+
+1. **PR description** → Reference **PBIs** (Product Backlog Items)
+   - Use `#1234` format in the description text
+   - PBIs represent the deliverable work visible to stakeholders
+   - Azure DevOps auto-links these references
+
+2. **CLI linking** → Link **Tasks**
+   - Use `az repos pr work-item add --id PR_ID --work-items TASK_ID`
+   - Tasks represent the implementation steps
+   - This tracks which tasks are completed by the PR
+
+**In commits**: Work item references are optional
 
 ## CLI Commands
 
@@ -80,11 +90,11 @@ Brief description of the changes - focus on "why" and "what", not implementation
 # Create PR
 az repos pr create --title "Title" --description "$(cat description.md)"
 
-# Set auto-complete (always do this after creating PR)
-az repos pr update --id ID --auto-complete true
-
 # Link tasks to PR
 az repos pr work-item add --id PR_ID --work-items TASK_ID
+
+# Set auto-complete (use script, NOT az cli directly)
+~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh --org hopeventures --id PR_ID --set-auto-complete
 
 # Update PR
 az repos pr update --id ID --title "Title" --description "$(cat description.md)"
@@ -96,4 +106,4 @@ az repos pr list --status active
 az repos pr show --id ID
 ```
 
-**Auto-complete**: CONFIRM WITH USER before setting. The merge strategy (squash vs merge) may be configured in Azure DevOps UI - need to verify correct settings are in place before using.
+**Auto-complete**: Use the `pr-merge-message.sh` script, NOT `az repos pr update --auto-complete`. The CLI clears the merge commit message. The script sets auto-complete with squash, transition-work-items, AND the merge commit message together.

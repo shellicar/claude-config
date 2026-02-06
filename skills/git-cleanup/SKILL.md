@@ -338,6 +338,43 @@ git show <pr-merge-commit> -- path/to/file.ts
 
 **Key insight**: When you rebase, commit hashes change but content stays the same. Always compare **actual diff content**, not just commit hashes.
 
+## Safety Checks
+
+Before deleting any branch:
+
+### Check for worktrees
+
+Branches checked out in worktrees cannot be deleted until the worktree is removed:
+
+```bash
+# List all worktrees
+git worktree list
+
+# Check if specific branch is in a worktree
+git worktree list | grep branch-name
+
+# Remove worktree first if needed
+git worktree remove /path/to/worktree
+```
+
+### Protected branches
+
+Never delete these branches (skip automatically):
+- `main`, `master`, `develop`, `trunk`
+- Currently checked-out branch
+
+### Dry run
+
+Preview what would be deleted before executing:
+
+```bash
+# List [gone] branches without deleting
+git branch -v | grep '\[gone\]'
+
+# List merged branches without deleting
+git branch --merged main | grep -v '^\*' | grep -vE '^\s*(main|master|develop)$'
+```
+
 ## Final Cleanup
 
 After investigation confirms branch can be deleted:

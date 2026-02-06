@@ -1,6 +1,6 @@
 ---
-name: typescript
-description: TypeScript coding guidelines including banned types, iterative approach, satisfies usage, re-export rules, and testing standards. Apply when writing or modifying TypeScript code.
+name: typescript-standards
+description: TypeScript coding standards and requirements including banned types, iterative approach, satisfies usage, re-export rules, and testing patterns. Apply when writing or modifying TypeScript code.
 user-invocable: false
 ---
 
@@ -279,11 +279,23 @@ it('sets nextSend to current time', async () => {
 });
 ```
 
+For throw assertions, assign the function to `actual`:
+
+```typescript
+it('throws on invalid phone number', () => {
+  const actual = () => formatPhoneE164('invalid', 'AU');
+
+  expect(actual).toThrow();
+});
+```
+
 **Why this pattern:**
 
 - Makes test logic crystal clear
 - Easy to see what value is expected vs what was produced
 - Consistent structure across all tests
+
+See `tdd` skill for the full TDD workflow and verification checklist.
 
 ### Use `satisfies` for Test Data
 
