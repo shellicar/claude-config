@@ -21,11 +21,13 @@ block() {
 }
 
 check_all() {
+  block '\bpython[23]?\b' 'python'
   block '\bxargs\b' 'xargs'
   block '\bsed\b' 'sed'
   block '\bgit\b.*\brm\b' 'git rm'
   block '\bgit\b.*\bcheckout\b' 'git checkout'
   block '\bgit\b.*\breset\b' 'git reset'
+  block '\bgit\b.*\bpush\b.*(-f\b|--force)' 'git push --force'
   block '"rm ' 'rm'
 }
 
@@ -65,6 +67,14 @@ test_blocked '{"command": "git reset --hard HEAD"}' 'git reset' '\bgit\b.*\brese
 test_blocked '{"command": "git -C /path reset HEAD~1"}' 'git reset' '\bgit\b.*\breset\b'
 test_blocked '{"command": "git --no-pager reset --hard"}' 'git reset' '\bgit\b.*\breset\b'
 test_blocked '{"command": "rm file.txt"}' 'rm' '"rm '
+test_blocked '{"command": "python script.py"}' 'python' '\bpython[23]?\b'
+test_blocked '{"command": "python3 script.py"}' 'python' '\bpython[23]?\b'
+test_blocked '{"command": "python2 script.py"}' 'python' '\bpython[23]?\b'
+test_blocked '{"command": "git push --force"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
+test_blocked '{"command": "git push --force-with-lease"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
+test_blocked '{"command": "git push origin main --force"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
+test_blocked '{"command": "git push -f"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
+test_blocked '{"command": "git -C /path push -f"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
 
 echo ""
 echo "=== Should NOT block ==="
@@ -76,6 +86,8 @@ test_allowed '{"content": "perform action"}' 'rm' '"rm '
 test_allowed '{"content": "confirm"}' 'rm' '"rm '
 test_allowed '{"content": "checkout process"}' 'git checkout' '\bgit\b.*\bcheckout\b'
 test_allowed '{"content": "reset the form"}' 'git reset' '\bgit\b.*\breset\b'
+test_allowed '{"command": "git push"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
+test_allowed '{"command": "git push origin main"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
 
 echo ""
 echo "Passed: $PASS / Failed: $FAIL"

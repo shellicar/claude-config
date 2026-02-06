@@ -51,6 +51,7 @@ The following commands are banned to prevent accidental data loss or destructive
 - `git rm` — ask the user to handle file removal
 - `git checkout` — use `git switch` for branch switching
 - `git reset` — ask the user to handle resets
+- `git push --force` / `-f` — never force push
 
 ## Command Descriptions
 

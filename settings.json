@@ -29,7 +29,6 @@
       "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [
-      "Bash(*python3*)",
       "Edit(**/package.json)",
       "Write(**/package.json)",
       "Edit(~/.claude/settings.json)",
