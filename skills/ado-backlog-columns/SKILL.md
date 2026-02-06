@@ -89,6 +89,7 @@ Each process (including custom processes cloned from Scrum) gets its own field I
 | Process | Start Date | Target Date |
 |---------|------------|-------------|
 | Eagers | 23873555 | 23873544 |
+| Flightrac | 46821680 | 46821669 |
 | Hope Ventures | 37524899 | 37524888 |
 
 **To discover field IDs for a new project**:
@@ -141,10 +142,29 @@ Replace `{START_DATE_ID}` and `{TARGET_DATE_ID}` with the process-specific field
 2. **If unknown, discover field IDs**: Query existing column options from any team in the project. If Start Date/Target Date columns aren't configured yet, ask the user to add them to one backlog view in the UI, then query again to extract the IDs
 3. **Query all teams** in the project
 4. For each team, query existing column options to discover available categories
-5. **Apply columns** using the discovered field IDs:
-   - Initiative/top-level: No Parent column
-   - Epics, Features, PBIs: Include Parent column
-6. Verify by querying column options after applying
+5. **Save column JSON to temp files** with meaningful names (substituting the discovered field IDs into the templates):
+   - `/tmp/ado-columns-with-parent.json` — 11 columns (for Epics, Features, PBIs)
+   - `/tmp/ado-columns-without-parent.json` — 10 columns (for Initiative/top-level)
+6. **Build a PATCH body** combining all categories into one JSON object, referencing the column arrays as string values:
+   ```json
+   {
+     "Agile/BacklogsHub/ColumnOptions/{initiative-category}": "<without-parent columns as JSON string>",
+     "Agile/BacklogsHub/ColumnOptions/Microsoft.EpicCategory": "<with-parent columns as JSON string>",
+     "Agile/BacklogsHub/ColumnOptions/Microsoft.FeatureCategory": "<with-parent columns as JSON string>",
+     "Agile/BacklogsHub/ColumnOptions/ProductBacklogColumnOptions": "<with-parent columns as JSON string>"
+   }
+   ```
+   Save this as `/tmp/ado-columns-body.json`
+7. **Apply columns** to each team using `az rest --method PATCH --body @/tmp/ado-columns-body.json`, with a comment before each command stating the team name and which views are being updated:
+   ```bash
+   # {Team Name} - Initiative: without-parent, Epic/Feature/PBI: with-parent
+   az rest --method PATCH \
+     --uri "https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me?api-version=7.1-preview" \
+     --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+     --headers "Content-Type=application/json" \
+     --body @/tmp/ado-columns-body.json
+   ```
+8. Verify by querying column options after applying
 
 ## Notes
 
