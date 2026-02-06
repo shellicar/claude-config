@@ -53,6 +53,16 @@ The following commands are banned to prevent accidental data loss or destructive
 - `git reset` — ask the user to handle resets
 - `git push --force` / `-f` — never force push
 
+## Auto-Approved Commands
+
+Some commands are auto-approved via `settings.json` (e.g., `git show`, `git log`, `git diff`). To benefit from this:
+
+- Use the **simple form** of commands that matches the approved pattern — don't add flags like `-C <path>` before the subcommand
+- If you need to run a command in a different directory, `cd` there first or rely on your working directory rather than using path flags
+- Example: use `git show <hash>` (matches `Bash(git show:*)`), not `git -C /some/path show <hash>` (won't match)
+
+This avoids unnecessary permission prompts and keeps auto-approve patterns narrow.
+
 ## Command Descriptions
 
 Always provide a clear `description` parameter when using the Bash tool, so the user can understand each command at a glance.
