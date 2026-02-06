@@ -84,7 +84,32 @@ Create a commit from staged changes with a concise, single-line message.
 
     Confirm the commit was created with the expected message.
 
-10. **Push**
+10. **Pre-push review**
+
+    List commits that will be pushed:
+
+    ```bash
+    git log @{u}..HEAD --oneline
+    ```
+
+    If no upstream exists (new branch), use `git log --oneline -10` and confirm scope with user.
+
+    Then review each commit's diff individually:
+
+    ```bash
+    git show <hash>
+    ```
+
+    Check **every** commit for:
+    - No sensitive content (secrets, credentials, API keys, tokens, `.env` files)
+    - No unintended files included
+    - All changes are accounted for
+
+    A secret added in one commit and removed in a later commit is still in the pushed history. Each commit must be clean.
+
+    Report findings to the user before pushing.
+
+11. **Push**
 
     ```bash
     git push
