@@ -28,13 +28,26 @@ Create a commit from staged changes with a concise, single-line message.
     - Use `AskUserQuestion` with options like "Stage them", "Leave unstaged"
     - Stage additional files if requested
 
-3. **Read the staged diff content**
+3. **Verify staging is correct**
+
+    After staging, run both:
+    ```bash
+    git diff --staged --stat
+    git diff --stat
+    ```
+
+    - Confirm staged changes match what was intended
+    - If unstaged changes remain, verify they are expected (i.e. files the user chose to leave unstaged)
+    - If a file you staged still shows unstaged changes, investigate — it may have been modified after staging
+    - Use `AskUserQuestion` to confirm with the user before proceeding
+
+4. **Read the staged diff content**
 
     ```bash
     git diff --staged
     ```
 
-4. **Detect convention**
+5. **Detect convention**
     Run the detection script:
 
     ```bash
@@ -44,7 +57,7 @@ Create a commit from staged changes with a concise, single-line message.
     If it outputs a convention name, load the corresponding `<convention>-conventions` skill.
     If it fails, proceed without convention-specific rules.
 
-5. **Check branch protection**
+6. **Check branch protection**
 
     ```bash
     git branch --show-current
@@ -59,24 +72,24 @@ Create a commit from staged changes with a concise, single-line message.
     git checkout -b <branch-name>
     ```
 
-6. **Generate commit message**
+7. **Generate commit message**
     - Concise, single line
     - Imperative mood ("Add feature" not "Added feature")
     - No period at end
     - Keep under 50 characters (hard limit: 72)
     - Detail belongs in PRs, not commits
 
-7. **Show the user the proposed commit message and ask for confirmation**
+8. **Show the user the proposed commit message and ask for confirmation**
 
     Use `AskUserQuestion` with options like "Commit", "Edit message", "Cancel"
 
-8. **Commit**
+9. **Commit**
 
     ```bash
     git commit -m "message"
     ```
 
-9. **Verify commit**
+10. **Verify commit**
 
     ```bash
     git log -1 --format="%h %s"
@@ -84,7 +97,7 @@ Create a commit from staged changes with a concise, single-line message.
 
     Confirm the commit was created with the expected message.
 
-10. **Pre-push review**
+11. **Pre-push review**
 
     List commits that will be pushed:
 
@@ -109,7 +122,7 @@ Create a commit from staged changes with a concise, single-line message.
 
     Report findings to the user before pushing.
 
-11. **Push**
+12. **Push**
 
     ```bash
     git push
