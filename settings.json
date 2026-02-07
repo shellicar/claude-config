@@ -2,13 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(./ecosystem/scripts/check-wip.sh:*)",
-      "Bash(./skills/github-pr/scripts/*.sh)",
-      "Bash(~/.claude/skills/*/scripts/ado-rest.sh --method GET *)",
+      "Bash(~/.claude/skills/github-pr/scripts/*.sh)",
+      "Bash(~/.claude/skills/azure-devops/scripts/ado-rest.sh --method GET *)",
       "Bash(az * --help *)",
       "Bash(az * --help)",
       "Bash(az * list *)",
       "Bash(az * query *)",
       "Bash(az * show *)",
+      "Bash(az version:*)",
+      "Bash(az --version:*)",
+      "Bash(az rest --method get *)",
       "Bash(git diff:*)",
       "Bash(git fetch:*)",
       "Bash(git log:*)",

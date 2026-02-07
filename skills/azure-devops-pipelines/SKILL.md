@@ -128,16 +128,6 @@ This is important for:
 
 ## Branch Policies
 
-Query all branch policies:
+For general branch policies (reviewers, merge strategy, comments, work item linking), see `azure-devops-repos`.
 
-```bash
-az repos policy list --project <Project> --org https://dev.azure.com/<org> -o json
-```
-
-Common policy types:
-- `Require a merge strategy` - squash only, etc.
-- `Comment requirements` - all comments must be resolved
-- `Minimum number of reviewers` - required approvals
-- `Required reviewers` - specific people must approve
-- `Build` - build validation policies with filename patterns
-- `Work item linking` - require linked work items
+Build validation policies are covered above in [Pipeline Triggers vs Build Validation Policies](#pipeline-triggers-vs-build-validation-policies).

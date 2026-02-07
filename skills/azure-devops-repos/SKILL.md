@@ -1,6 +1,6 @@
 ---
 name: azure-devops-repos
-description: PRs and merge workflows in Azure DevOps. Use when creating/managing PRs, setting auto-complete, linking work items to PRs, or configuring merge commit messages.
+description: PRs, merge workflows, and branch policies in Azure DevOps. Use when creating/managing PRs, setting auto-complete, linking work items to PRs, configuring merge commit messages, or managing branch protection policies.
 ---
 
 # Azure DevOps Repos
@@ -120,3 +120,69 @@ Work item links (`#1234`) render with full metadata (title, status badge). For c
 ## Work Item Linking
 
 Work items are automatically linked when referenced in PR description with `#1234` syntax.
+
+## Branch Policies
+
+Query all branch policies for a project:
+
+```bash
+az repos policy list --project <Project> --org https://dev.azure.com/<org> -o json
+```
+
+Common policy types:
+- `Require a merge strategy` — squash only, etc.
+- `Comment requirements` — all comments must be resolved
+- `Minimum number of reviewers` — required approvals
+- `Required reviewers` — specific people must approve
+- `Work item linking` — require linked work items
+
+For **build validation policies**, see `azure-devops-pipelines`.
+
+### Managing Policies
+
+```bash
+# Minimum reviewer count
+az repos policy approver-count create --project <Project> --org https://dev.azure.com/<org> \
+  --branch main --repository-id <RepoId> \
+  --minimum-approver-count 2 --creator-vote-counts false --allow-downvotes false \
+  --reset-on-source-push true --blocking true --enabled true
+
+az repos policy approver-count update --id <PolicyId> --project <Project> --org https://dev.azure.com/<org> \
+  --minimum-approver-count 1
+
+# Merge strategy
+az repos policy merge-strategy create --project <Project> --org https://dev.azure.com/<org> \
+  --branch main --repository-id <RepoId> \
+  --allow-squash true --allow-no-fast-forward false --allow-rebase false --allow-rebase-merge false \
+  --blocking true --enabled true
+
+# Work item linking
+az repos policy work-item-linking create --project <Project> --org https://dev.azure.com/<org> \
+  --branch main --repository-id <RepoId> \
+  --blocking true --enabled true
+
+# Comment requirements
+az repos policy comment-required create --project <Project> --org https://dev.azure.com/<org> \
+  --branch main --repository-id <RepoId> \
+  --blocking true --enabled true
+
+# Required reviewers
+az repos policy required-reviewer create --project <Project> --org https://dev.azure.com/<org> \
+  --branch main --repository-id <RepoId> \
+  --required-reviewer-ids <UserId1> <UserId2> --message "Requires approval from team leads" \
+  --blocking true --enabled true
+```
+
+### Querying Repo ID
+
+Policies require `--repository-id`. To find it:
+
+```bash
+az repos show --repository <RepoName> --project <Project> --org https://dev.azure.com/<org> -o json --query id
+```
+
+### Branch Scoping
+
+All policy commands accept `--branch` to scope to a specific branch. Use the short name (e.g., `main`), not the full ref (`refs/heads/main`).
+
+To apply a policy to all branches, omit `--branch` and `--repository-id`.
