@@ -39,6 +39,7 @@ check_all() {
 
 if [ "$TEST_MODE" = false ]; then
   INPUT=$(cat)
+  echo "$INPUT" >> /tmp/hook-debug.log
   check_all
   exit 0
 fi
@@ -118,6 +119,7 @@ test_allowed '{"description": "this & that"}' 'AND chaining' '"command".*&&'
 test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'semicolon chaining' '"command".*[;]'
 test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'AND chaining' '"command".*&&'
 test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'OR chaining' '"command".*\|\|'
+test_allowed '{"command": "az rest --method GET --uri \"https://dev.azure.com/Flightrac/Flightrac/_apis/wit/classificationNodes/Areas?\\$depth=10&api-version=7.1\" --resource \"499b84ac-1321-427f-aa17-267ca6975798\" -o json"}' 'AND chaining' '"command".*&&'
 
 echo ""
 echo "Passed: $PASS / Failed: $FAIL"
