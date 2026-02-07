@@ -30,10 +30,23 @@ Always use POSIX Bourne shell:
 
 ## Error Handling
 
-Use `set +e` by default - handle errors explicitly rather than exiting on first failure:
+Use `set -e` by default — exit on first failure to prevent cascading errors:
+
+```sh
+set -e
+```
+
+Use `set +e` temporarily when you need to handle errors explicitly:
 
 ```sh
 set +e
+result=$(some_command)
+status=$?
+set -e
+
+if [ $status -ne 0 ]; then
+  echo "Handling error..."
+fi
 ```
 
 ## POSIX Compatibility
@@ -327,7 +340,7 @@ grep -- "$pattern" "$file"
 # Usage:
 #   script.sh --org <ORG> --id <ID> [--flag]
 
-set +e
+set -e
 
 # Parse arguments
 ORG=""

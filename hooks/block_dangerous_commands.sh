@@ -21,7 +21,7 @@ block() {
 }
 
 check_all() {
-  block '\$\(' 'command substitution'
+  # block '\$\(' 'command substitution'
   block '`' 'backtick substitution'
   block '\bpython[23]?\b' 'python'
   block '\bxargs\b' 'xargs'
