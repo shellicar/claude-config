@@ -23,7 +23,23 @@ If scripts are missing, fall back to manual git commands or ask the user for con
 
 ## Usage
 
-### 1. Detect Convention
+### 1. Verify Current Branch
+
+```bash
+git branch --show-current
+```
+
+If on `main` or `master`, **STOP** — a PR cannot be created from the default branch. Ask the user to create a feature branch first.
+
+Also check if the branch has already been merged (e.g. squash-merged via PR):
+
+```bash
+gh pr list --head <branch-name> --state merged --json number,title
+```
+
+If a merged PR exists for this branch, **STOP** — inform the user this branch was already merged. They need to switch to main, pull, and create a new branch for further work.
+
+### 2. Detect Convention
 
 Run the detection script to determine which convention applies:
 
@@ -34,7 +50,7 @@ Run the detection script to determine which convention applies:
 This outputs the convention name (e.g., `shellicar`, `eagers`, `hopeventures`) or fails if no match.
 Load the corresponding `<convention>-conventions` skill based on the output.
 
-### 2. Determine Ancestor Branch
+### 3. Determine Ancestor Branch
 
 Run the ancestor detection script:
 
@@ -44,7 +60,7 @@ Run the ancestor detection script:
 
 This finds the correct base branch using merge-base analysis, detecting epic branches when present.
 
-### 3. Generate Change Summary
+### 4. Generate Change Summary
 
 Run the summary script:
 
@@ -58,14 +74,14 @@ This outputs:
 - Commits since ancestor
 - Diff stats from ancestor
 
-### 4. Create PR Content
+### 5. Create PR Content
 
 Based on loaded convention skill:
 - **Title**: Short summary of the branch purpose
 - **Description**: Detailed summary of changes, grouped by feature/area
 - **Work Items**: Link format per convention (e.g., `#123`, `AB#1234`)
 
-### 5. Create or Update PR
+### 6. Create or Update PR
 
 **GitHub** (via convention):
 ```bash

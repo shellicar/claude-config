@@ -54,18 +54,26 @@ Brief description of the changes.
 - **Format**: None required (personal projects)
 - GitHub issues can be referenced with `#123` if applicable
 
-## CLI Commands
+## Repository Configuration
 
-```bash
-# Create PR
-gh pr create --title "Title" --body "Description"
+Use the `github-repos` skill to apply these settings.
 
-# Update PR
-gh pr edit --title "New title" --body "New description"
+### Desired Settings
 
-# List PRs
-gh pr list
+- Wiki: disabled
+- Projects: disabled
+- Discussions: disabled
+- Issues: disabled
+- Auto-merge: enabled
+- Delete branch on merge: enabled
+- Default branch: main
 
-# View PR
-gh pr view 123
-```
+### Desired Ruleset (name: `main`)
+
+Target: default branch. Rules:
+
+1. `deletion`
+2. `non_fast_forward`
+3. `code_scanning` (CodeQL, high_or_higher)
+4. `pull_request` (0 approvals, squash only)
+5. `creation`

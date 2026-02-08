@@ -10,6 +10,7 @@
       "Bash(az * query *)",
       "Bash(az * show *)",
       "Bash(az version:*)",
+      "Bash(gh pr list:*)",
       "Bash(az --version:*)",
       "Bash(az rest --method get *)",
       "Bash(git diff:*)",

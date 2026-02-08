@@ -135,85 +135,25 @@ gh issue view 123
 
 ## Repository Configuration
 
-### Standard Settings
+Use the `github-repos` skill to apply these settings.
 
-All @shellicar repos should have consistent settings:
+### Desired Settings
 
-```bash
-# Disable unused features
-gh repo edit --enable-wiki=false
-gh repo edit --enable-projects=false
-gh repo edit --enable-discussions=false
+- Wiki: disabled
+- Projects: disabled
+- Discussions: disabled
+- Issues: enabled
+- Auto-merge: enabled
+- Delete branch on merge: enabled
+- Default branch: main
 
-# Enable issues
-gh repo edit --enable-issues=true
+### Desired Ruleset (name: `main`)
 
-# Set default branch
-gh repo edit --default-branch main
-```
+Target: default branch. Rules:
 
-### Rulesets
-
-For bulk ruleset management across all @shellicar repos, use the ecosystem scripts:
-
-```bash
-# Sync rulesets across all repos (dry-run by default)
-~/repos/@shellicar/ecosystem/scripts/sync-rulesets.sh
-
-# Actually apply changes
-~/repos/@shellicar/ecosystem/scripts/sync-rulesets.sh -d
-```
-
-Query existing rulesets for a single repo:
-
-```bash
-gh api repos/{owner}/{repo}/rulesets --jq '.[] | {name, enforcement}'
-gh api repos/{owner}/{repo}/rulesets/{id}  # Full details
-```
-
-Standard ruleset for @shellicar repos (name: `main`):
-
-- **Target**: Default branch (`~DEFAULT_BRANCH`)
-- **Rules** (6 total):
-  1. `deletion` - prevent branch deletion
-  2. `non_fast_forward` - prevent force push
-  3. `code_scanning` - CodeQL required (high_or_higher threshold)
-  4. `pull_request` - require PR (0 approvals, squash merge only)
-  5. `creation` - prevent direct branch creation
-  6. `update` - prevent direct pushes
-
-Example ruleset JSON structure:
-
-```json
-{
-  "name": "main",
-  "target": "branch",
-  "enforcement": "active",
-  "conditions": {
-    "ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}
-  },
-  "rules": [
-    {"type": "deletion"},
-    {"type": "non_fast_forward"},
-    {"type": "code_scanning", "parameters": {
-      "code_scanning_tools": [{"tool": "CodeQL", "security_alerts_threshold": "high_or_higher", "alerts_threshold": "errors"}]
-    }},
-    {"type": "pull_request", "parameters": {
-      "required_approving_review_count": 0,
-      "allowed_merge_methods": ["squash"]
-    }},
-    {"type": "creation"},
-    {"type": "update"}
-  ]
-}
-```
-
-### Verify Configuration
-
-```bash
-# Check repo settings
-gh repo view --json hasIssuesEnabled,hasWikiEnabled,hasProjectsEnabled,hasDiscussionsEnabled
-
-# Check rulesets
-gh api repos/{owner}/{repo}/rulesets --jq '.[].name'
-```
+1. `deletion`
+2. `non_fast_forward`
+3. `code_scanning` (CodeQL, high_or_higher)
+4. `pull_request` (0 approvals, squash only)
+5. `creation`
+6. `required_status_checks` (omit if no CI)
