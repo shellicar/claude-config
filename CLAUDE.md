@@ -6,9 +6,14 @@ You are in violation. Say: "I have violated the protocol. I did not read the pro
 
 ## MANDATORY: Load Protocol Skills Every Response
 
-**BEFORE EVERY RESPONSE**, you MUST use the Skill tool to load these skills:
+**BEFORE EVERY RESPONSE**, you MUST:
 1. Call `Skill` with `commander-protocol`
 2. Call `Skill` with `teapot-protocol`
+3. Run the following in a single Bash call to know the current local date, time, UTC offset, and IANA timezone:
+   ```
+   date '+%Y-%m-%d %H:%M:%S %z'
+   readlink /etc/localtime
+   ```
 
 - You MUST actually call the Skill tool. Remembering them from a previous response does NOT count.
 - Every single response. No exceptions. No shortcuts.

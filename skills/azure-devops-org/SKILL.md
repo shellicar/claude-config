@@ -125,25 +125,21 @@ Apply standard column layouts across all teams. See [references/backlog-columns.
      3. Update the known project data table in `references/backlog-columns.md`
    - This is the ONLY step that requires manual user input.
 3. **Query all teams** in the project. Print a table of team names and IDs.
-4. **For each team**, run these five steps in order. Do NOT skip any step. Do NOT batch teams. Complete all five steps for one team before moving to the next:
-   a. **Query BEFORE** - query existing column options and save to a temp file using `--temp-file`:
+4. **Query current settings for ALL teams** - for each team, GET column options using `--temp-file`:
       ```bash
       ~/.claude/skills/azure-devops/scripts/ado-rest.sh \
         --method GET \
         --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions' \
         --temp-file
       ```
-      Read the temp file. Print: which keys are present, which of our expected keys are found, and for each key how many columns it currently has.
-   b. **Build PATCH body** - use ONLY the keys from the known project data table (Initiative Key → without-parent template, Epic/Feature/PBI Key → with-parent template). Ignore any keys returned by the API that are not in the table. Use the project's field IDs for Start Date and Target Date.
-      ```json
-      {
-        "Agile/BacklogsHub/ColumnOptions/{category}": "<columns as JSON string>",
-        ...
-      }
-      ```
-      Save as `/tmp/ado-columns-body.json`. Print: which keys are being patched and which template (with-parent/without-parent) each uses.
-   c. **Show diff** - show the diff between `/tmp/ado-columns-before.json` and `/tmp/ado-columns-body.json` so the exact changes are visible before applying.
-   d. **Apply** - PATCH the column options:
+      Read each temp file. Print a **summary table** of ALL teams showing: team name, which expected keys are present, and column count per key (or "not set").
+5. **Show the change plan** - build the PATCH body using ONLY keys from the known project data table (Initiative Key → without-parent template, Epic/Feature/PBI Key → with-parent template). Use the project's field IDs for Start Date and Target Date. Save as `/tmp/ado-columns-body.json`.
+      Print a **changes table** for ALL teams showing per team, per key:
+      - Before column count (or "not set")
+      - After column count
+      - What's changing (e.g. "no change", "+Parent, +AreaPath", or "new: full template")
+      The PATCH body is the same for all teams. This table shows what will change for each.
+6. **Apply to all teams** - for each team, PATCH the column options:
       ```bash
       ~/.claude/skills/azure-devops/scripts/ado-rest.sh \
         --method PATCH \
@@ -151,12 +147,12 @@ Apply standard column layouts across all teams. See [references/backlog-columns.
         --param 'api-version=7.1-preview' \
         -- --headers 'Content-Type=application/json' --body @/tmp/ado-columns-body.json
       ```
-      Print: success or failure.
-   e. **Verify AFTER** - query column options again using `--temp-file`:
+      Print: success or failure per team.
+7. **Verify all teams** - for each team, GET column options again using `--temp-file`:
       ```bash
       ~/.claude/skills/azure-devops/scripts/ado-rest.sh \
         --method GET \
         --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions' \
         --temp-file
       ```
-      Read the temp file. Print: for each expected key, confirm it is present and has the correct number of columns. Note any differences from expected.
+      Read each temp file. Print a **verification table** of ALL teams: team name, key, expected columns, actual columns, match (yes/no).

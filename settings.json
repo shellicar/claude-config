@@ -30,7 +30,8 @@
       "Read(~/.claude/settings.json)",
       "Read(~/.claude/skills/**)",
       "WebFetch(domain:next.shadcn-svelte.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(/var/folders/s9/*/T/tmp.*)"
     ],
     "deny": [
       "Edit(./ecosystem/scripts)",
