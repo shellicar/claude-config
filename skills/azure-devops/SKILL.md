@@ -28,12 +28,19 @@ Use `scripts/ado-rest.sh` for all `az rest` calls. It handles authentication (re
 ```bash
 # Simple GET (no query params)
 ~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+  --method GET \
   --path 'https://dev.azure.com/{org}/_apis/projects/{project}/teams'
 
 # GET with query params (avoids & permission issues)
 ~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+  --method GET \
   --path 'https://dev.azure.com/{org}/{project}/_apis/wit/classificationNodes/Areas' \
   --param '$depth=10'
+
+# GET column options for a team (confirm existing backlog column config)
+~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+  --method GET \
+  --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions'
 
 # Non-GET with extra az rest args
 ~/.claude/skills/azure-devops/scripts/ado-rest.sh \

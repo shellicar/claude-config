@@ -1,7 +1,7 @@
 #!/bin/sh
 # Azure DevOps REST API wrapper
 # Constructs authenticated az rest calls with proper URL encoding
-# Usage: ado-rest.sh --method METHOD --path PATH [--param KEY=VALUE]... [-- extra az rest args...]
+# Usage: ado-rest.sh --method METHOD --path PATH [--param KEY=VALUE]... [--temp-file] [-- extra az rest args...]
 
 set -e
 
@@ -10,6 +10,7 @@ METHOD=""
 METHOD_SET=0
 PATH_SEGMENT=""
 PARAMS=""
+TEMP_FILE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -27,6 +28,7 @@ while [ $# -gt 0 ]; do
       fi
       shift 2
       ;;
+    --temp-file) TEMP_FILE="$(mktemp)"; shift 1 ;;
     --)        shift; break ;;
     *)         echo "Unknown argument: $1" >&2; exit 1 ;;
   esac
@@ -60,4 +62,9 @@ else
 fi
 
 # Execute - "$@" preserves quoting of remaining args
-az rest --method "$METHOD" --uri "$URI" --resource "$RESOURCE" "$@"
+if [ -n "$TEMP_FILE" ]; then
+  az rest --method "$METHOD" --uri "$URI" --resource "$RESOURCE" "$@" > "$TEMP_FILE"
+  echo "$TEMP_FILE"
+else
+  az rest --method "$METHOD" --uri "$URI" --resource "$RESOURCE" "$@"
+fi

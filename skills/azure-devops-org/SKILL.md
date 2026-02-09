@@ -113,4 +113,50 @@ Compare area path hierarchy against all teams' `teamfieldvalues` to find paths n
 
 ## Backlog Column Configuration
 
-Apply standard column layouts across all teams. See [references/backlog-columns.md](references/backlog-columns.md) for column templates, field IDs, and the step-by-step workflow.
+Apply standard column layouts across all teams. See [references/backlog-columns.md](references/backlog-columns.md) for column templates, known project data, and API examples.
+
+### Workflow
+
+1. **Determine org and project**: See `azure-devops` skill for detection. Print the org and project.
+2. **Look up the project in the known project data table** in [references/backlog-columns.md](references/backlog-columns.md). Print a table of the project's field IDs and column option keys.
+   - If the project is missing or has `—` for any values, **discover them**:
+     1. Ask the user to manually set a column view in the UI for one team and one backlog level (e.g. set Title, Start Date, Target Date on the PBI backlog)
+     2. Query that team's column options to learn the field IDs and settings keys
+     3. Update the known project data table in `references/backlog-columns.md`
+   - This is the ONLY step that requires manual user input.
+3. **Query all teams** in the project. Print a table of team names and IDs.
+4. **For each team**, run these five steps in order. Do NOT skip any step. Do NOT batch teams. Complete all five steps for one team before moving to the next:
+   a. **Query BEFORE** - query existing column options and save to a temp file using `--temp-file`:
+      ```bash
+      ~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+        --method GET \
+        --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions' \
+        --temp-file
+      ```
+      Read the temp file. Print: which keys are present, which of our expected keys are found, and for each key how many columns it currently has.
+   b. **Build PATCH body** - use ONLY the keys from the known project data table (Initiative Key → without-parent template, Epic/Feature/PBI Key → with-parent template). Ignore any keys returned by the API that are not in the table. Use the project's field IDs for Start Date and Target Date.
+      ```json
+      {
+        "Agile/BacklogsHub/ColumnOptions/{category}": "<columns as JSON string>",
+        ...
+      }
+      ```
+      Save as `/tmp/ado-columns-body.json`. Print: which keys are being patched and which template (with-parent/without-parent) each uses.
+   c. **Show diff** - show the diff between `/tmp/ado-columns-before.json` and `/tmp/ado-columns-body.json` so the exact changes are visible before applying.
+   d. **Apply** - PATCH the column options:
+      ```bash
+      ~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+        --method PATCH \
+        --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me' \
+        --param 'api-version=7.1-preview' \
+        -- --headers 'Content-Type=application/json' --body @/tmp/ado-columns-body.json
+      ```
+      Print: success or failure.
+   e. **Verify AFTER** - query column options again using `--temp-file`:
+      ```bash
+      ~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+        --method GET \
+        --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions' \
+        --temp-file
+      ```
+      Read the temp file. Print: for each expected key, confirm it is present and has the correct number of columns. Note any differences from expected.

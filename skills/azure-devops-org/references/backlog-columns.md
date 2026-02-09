@@ -10,58 +10,43 @@ Standard column layouts applied across all teams in a project.
 **Without Parent** (10 columns - Initiative/top-level):
 - ID, Title, State, Progress, Area Path, Iteration Path, Assigned To, Start Date, Target Date, Tags
 
-## Field IDs Are Process-Specific
+## Field IDs and Column Option Keys Are Project-Specific
 
-Start Date and Target Date field IDs vary per process. Cannot be hardcoded across projects.
+Start Date and Target Date field IDs, and the settings keys used for column options, vary per project/process. They cannot be hardcoded or assumed across projects. Both must be **discovered** per project.
 
-**Known process field IDs**:
+**Known project data**:
 
-| Process | Start Date | Target Date |
-|---------|------------|-------------|
-| Eagers | 23873555 | 23873544 |
-| Flightrac | 46821680 | 46821669 |
-| Hope Ventures | 37524899 | 37524888 |
+| Project | Start Date ID | Target Date ID | Initiative Key | Epic Key | Feature Key | PBI Key |
+|---------|--------------|----------------|----------------|----------|-------------|---------|
+| Eagers | 23873555 | 23873544 | `Custom.c4680640-df9b-4845-a52d-63b3376ef825` | `Microsoft.EpicCategory` | `Microsoft.FeatureCategory` | `ProductBacklogColumnOptions` |
+| Flightrac | 46821680 | 46821669 | — | — | — | — |
+| Hope Ventures | 37524899 | 37524888 | — | — | — | — |
 
-**To discover field IDs for a new project**:
-1. Manually add Start Date and Target Date columns to one backlog view in the UI
-2. Query that team's column options via API (see below)
-3. Extract the field IDs from the response
-
-## Backlog Category Keys
-
-**IMPORTANT**: Category keys in settings don't always match API category names!
-
-| Settings Key | Backlog Level |
-|-------------|---------------|
-| `Custom.{guid}` | Initiative (project-specific GUID) |
-| `Microsoft.EpicCategory` | Epics |
-| `Microsoft.FeatureCategory` | Features |
-| `ProductBacklogColumnOptions` | PBIs (**NOT** `Microsoft.RequirementCategory`) |
-
-Categories vary by project. Query existing column options to discover available categories.
+`—` means not yet discovered for that project.
 
 ## Column API
 
+Do NOT filter, transform, or pipe API output. Return full raw results.
+
 ```bash
 # Get current column options for a team
-az rest --method GET \
-  --uri 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions' \
-  --resource '499b84ac-1321-427f-aa17-267ca6975798'
+~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+  --method GET \
+  --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions'
 
 # Set column options (PATCH merges settings keys)
-az rest --method PATCH \
-  --uri 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me?api-version=7.1-preview' \
-  --resource '499b84ac-1321-427f-aa17-267ca6975798' \
-  --headers 'Content-Type=application/json' \
-  --body @/tmp/ado-columns-body.json
+~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+  --method PATCH \
+  --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me' \
+  --param 'api-version=7.1-preview' \
+  -- --headers 'Content-Type=application/json' --body @/tmp/ado-columns-body.json
 
 # Delete column options (reset to default)
-az rest --method DELETE \
-  --uri 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions/{category}?api-version=7.1-preview' \
-  --resource '499b84ac-1321-427f-aa17-267ca6975798'
+~/.claude/skills/azure-devops/scripts/ado-rest.sh \
+  --method DELETE \
+  --path 'https://dev.azure.com/{org}/_apis/Settings/WebTeam/{team_id}/Entries/me/Agile/BacklogsHub/ColumnOptions/{category}' \
+  --param 'api-version=7.1-preview'
 ```
-
-**Note**: `api-version` is omitted from GET URIs (Azure DevOps defaults to latest). Write operations (PATCH/DELETE) that require `-preview` suffix keep it as a single query param. Avoid `&` in URIs as Claude Code's permission matcher treats it as a shell operator and will prompt for approval.
 
 **Note**: Column options are per-user settings stored under `me/`.
 
@@ -102,22 +87,3 @@ Replace `{START_DATE_ID}` and `{TARGET_DATE_ID}` with process-specific field IDs
 ]
 ```
 
-## Workflow
-
-1. **Determine org and project**: See `azure-devops` skill for detection.
-2. **Check for known field IDs**: Look up in table above.
-3. **If unknown**: Query existing column options from any team. If Start Date/Target Date not configured, ask user to add them in UI first, then query again.
-4. **Query all teams** in the project.
-5. **Query column options** from one team to discover available category keys.
-6. **Build PATCH body** combining all categories into one JSON object (category keys as keys, column JSON arrays as string values):
-   ```json
-   {
-     "Agile/BacklogsHub/ColumnOptions/{initiative-category}": "<without-parent columns as JSON string>",
-     "Agile/BacklogsHub/ColumnOptions/Microsoft.EpicCategory": "<with-parent columns as JSON string>",
-     "Agile/BacklogsHub/ColumnOptions/Microsoft.FeatureCategory": "<with-parent columns as JSON string>",
-     "Agile/BacklogsHub/ColumnOptions/ProductBacklogColumnOptions": "<with-parent columns as JSON string>"
-   }
-   ```
-   Save as `/tmp/ado-columns-body.json`.
-7. **Apply** to each team using `az rest --method PATCH --body @/tmp/ado-columns-body.json`.
-8. **Verify** by querying column options after applying.
