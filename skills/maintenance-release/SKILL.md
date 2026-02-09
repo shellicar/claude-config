@@ -66,18 +66,23 @@ Parse output to identify:
 - Patched versions
 - Dependency paths
 
-#### Finding the CVE ID
+#### Finding the CVE ID and GHSA URL
 
-The audit output shows a GHSA link (e.g., `https://github.com/advisories/GHSA-xxxx`).
+Both the CVE ID and GHSA URL are needed — the CVE for branch naming, and the GHSA URL for the commit message link.
 
-To find the actual CVE ID (needed for branch naming):
+**From `pnpm audit`**: The output includes GHSA links. Use `pnpm audit --json` for structured data with advisory URLs and CVE IDs.
 
-1. Visit the GHSA link
-2. Look for "CVE ID" on the page
-3. If not shown, follow links to the package's security advisory (e.g., the package repo's security tab)
-4. The CVE ID format is `CVE-YYYY-NNNNN`
+**From a CVE ID**: Search GitHub advisories — it matches directly on CVE IDs:
 
-Example: GHSA-7h2j-956f-4vf2 → follow link to package repo → CVE-2026-25547
+```
+https://github.com/advisories?query=CVE-YYYY-NNNNN
+```
+
+Additional filters: `ecosystem:npm`, `affects:LIBRARY`, `severity:LEVEL` — see [GitHub docs](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/browsing-security-advisories-in-the-github-advisory-database#searching-the-github-advisory-database).
+
+**From a GHSA URL**: Visit the page to find the CVE ID listed on it.
+
+Example: CVE-2026-22036 ↔ GHSA-g9mf-h72j-4rw9
 
 ### 1.2 Check @shellicar Package Dependencies
 
@@ -427,14 +432,14 @@ Combine human-readable context with unique identifier:
 Based on included changes:
 
 ```text
-# Security only
-fix(security): resolve CVE in brace-expansion
+# Security only (link to GHSA advisory)
+Fix [CVE-2026-22036](https://github.com/advisories/GHSA-xxxx-xxxx-xxxx) in undici
 
 # Dependencies only
-chore(deps): update minor and patch dependencies
+Update minor and patch dependencies
 
 # Mixed
-chore(maintenance): security fixes and dependency updates
+Security fixes and dependency updates
 ```
 
 ### 5.3 Ask About PR

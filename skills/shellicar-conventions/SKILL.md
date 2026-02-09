@@ -43,10 +43,6 @@ Brief description of the changes.
 - Change 1
 - Change 2
 
-## Test Plan
-
-- [ ] Test case 1
-- [ ] Test case 2
 ```
 
 ## Work Item Linking
