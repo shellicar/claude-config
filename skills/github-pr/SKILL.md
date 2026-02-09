@@ -76,12 +76,16 @@ This outputs:
 
 ### 5. Create PR Content
 
-Based on loaded convention skill:
+**CVE/security branches** (`security/` prefix): Use the commit message as both the PR title and body.
+
+**All other branches**: Based on loaded convention skill:
 - **Title**: Short summary of the branch purpose
-- **Description**: Detailed summary of changes, grouped by feature/area
+- **Description**: Concise summary of changes
 - **Work Items**: Link format per convention (e.g., `#123`, `AB#1234`)
 
 ### 6. Create or Update PR
+
+Pass the body directly via `--body` with a quoted string. Do NOT use temp files, `--body-file`, HEREDOCs, or `$(cat ...)` substitution.
 
 **GitHub** (via convention):
 ```bash
