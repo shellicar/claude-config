@@ -45,6 +45,10 @@ Brief description of the changes.
 
 ```
 
+## Co-Authorship
+
+Include `Co-Authored-By: Claude <noreply@anthropic.com>` in the PR description (not in commits) if you would like to be credited.
+
 ## Work Item Linking
 
 - **Format**: None required (personal projects)

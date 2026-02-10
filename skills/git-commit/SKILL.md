@@ -7,6 +7,10 @@ description: Create a git commit with a concise message. Use when committing cha
 
 Create a commit from staged changes with a concise, single-line message.
 
+## Working Directory
+
+Always `cd` to the project directory first, then use bare `git` commands (e.g., `git status`, not `git -C /path status`). This ensures commands match auto-approve patterns in the user's permission settings.
+
 ## Steps
 
 1. **Verify current branch**

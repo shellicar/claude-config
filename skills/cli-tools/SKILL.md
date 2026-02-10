@@ -8,6 +8,10 @@ user-invocable: false
 
 Guidelines for how to execute commands via the Bash tool.
 
+## Working Directory
+
+The working directory set via `cd` **persists between separate Bash tool calls**. Use `cd` to change directory once, then run subsequent commands without path prefixes or chaining. You do NOT need to `cd` in every command.
+
 ## Blocked Tools
 
 Do NOT use these tools via Bash:

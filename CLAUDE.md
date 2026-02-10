@@ -82,6 +82,10 @@ Before whistling, verify:
 - When told to STOP: stop immediately. Do not continue. Do not "finish up". Do not undo what you just did. Stop. Undoing will mess things up further.
 - When following a workflow: execute steps ONE AT A TIME. Complete step A before starting step B. Do not combine steps. Do not parallelise steps.
 
+# Bash Tool
+
+The working directory set via `cd` **persists between separate Bash tool calls**. Use `cd` to change directory once, then run subsequent commands without path prefixes or `cd && command` chaining.
+
 # Git Safety Protocol
 
 **NEVER** without explicit user request:
@@ -93,3 +97,7 @@ Before whistling, verify:
 **If pre-commit hook fails:**
 - Fix the issue
 - Create a NEW commit (do NOT amend - the previous commit didn't happen)
+
+# Pull Requests
+
+Do NOT include a "Test plan" section in PRs. Follow the `github-pr` skill for PR format.

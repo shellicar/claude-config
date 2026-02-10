@@ -8,6 +8,10 @@ allowed-tools: Bash(~/.claude/skills/github-pr/scripts/*)
 
 Create or update a pull request with a detailed summary of changes.
 
+## Working Directory
+
+Always `cd` to the project directory first, then use bare `git` and `gh` commands (e.g., `git status`, not `git -C /path status`). This ensures commands match auto-approve patterns in the user's permission settings.
+
 ## Script Dependencies
 
 This skill uses helper scripts in `~/.claude/skills/github-pr/scripts/`:
@@ -79,9 +83,33 @@ This outputs:
 **CVE/security branches** (`security/` prefix): Use the commit message as both the PR title and body.
 
 **All other branches**: Based on loaded convention skill:
-- **Title**: Short summary of the branch purpose
-- **Description**: Concise summary of changes
+- **Title**: Short summary of the branch purpose (under 70 characters)
+- **Description**: See style guide below
 - **Work Items**: Link format per convention (e.g., `#123`, `AB#1234`)
+
+#### PR Description Style Guide
+
+Keep descriptions **short and scannable**. The PR title already conveys the purpose — the body adds only what the title can't.
+
+**Format**:
+```markdown
+## Summary
+
+- Bullet point of key change 1
+- Bullet point of key change 2
+- Bullet point of key change 3
+```
+
+**Rules**:
+- Use `## Summary` heading with a bullet list
+- **3-5 bullets maximum** — one short phrase per bullet, not full sentences
+- Describe **what** was done, not **how** it was implemented (e.g., "Add env scrubbing for sandbox" not "Create ENV_PASSTHROUGH Set and buildSandboxEnv() function that filters process.env")
+- Each bullet should describe a meaningful change, not individual file edits
+- Group related changes into a single bullet (e.g., "Add X with Y and Z" not three separate bullets)
+- Do NOT list every file changed or every minor detail
+- Do NOT add lengthy explanations, rationale, or background context
+- Do NOT include test plans, implementation notes, or technical deep-dives
+- If a change is trivial enough that the title says it all, an empty body is fine
 
 ### 6. Create or Update PR
 

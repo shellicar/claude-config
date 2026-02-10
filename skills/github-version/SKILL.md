@@ -194,23 +194,20 @@ Insert after the most recent version link.
 
 ## Phase 4: Bump Package.json Version
 
-Update the version in package.json (monorepo: the published package):
+Use `pnpm version` to bump the version (avoids needing direct edit access to package.json):
 
 ```bash
-# For monorepo with packages/
-packages/<package-name>/package.json
+# From the package directory
+cd packages/<package-name>
+pnpm version patch --no-git-tag-version   # 1.2.1 → 1.2.2
+pnpm version minor --no-git-tag-version   # 1.2.1 → 1.3.0
+pnpm version major --no-git-tag-version   # 1.2.1 → 2.0.0
 
-# For single package repo
-package.json
+# For pre-releases, use explicit version
+pnpm version 1.2.1-preview.1 --no-git-tag-version
 ```
 
-Update the `"version"` field to the new version.
-
-For pre-releases:
-
-```json
-"version": "1.2.1-preview.1"
-```
+Use `--no-git-tag-version` to prevent pnpm from creating a git tag and commit automatically.
 
 ## Phase 5: Stage Changes
 

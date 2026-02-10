@@ -84,18 +84,11 @@ Closes #456
 - Change 1
 - Change 2
 
-## Test Plan
-
-- [ ] Test case 1
-- [ ] Test case 2
-
----
-Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 ## Co-Authorship
 
-When Claude writes or substantially modifies code, include co-author credit in the PR description (not in commits).
+Include `Co-Authored-By: Claude <noreply@anthropic.com>` in the PR description (not in commits) if you would like to be credited.
 
 ## Issue and Milestone Linking
 

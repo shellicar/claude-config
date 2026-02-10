@@ -39,7 +39,6 @@ The following repos allow direct commits to main (no branch required):
 - Stakeholder-friendly - focus on "what changed" not implementation details
 - Imperative mood
 - Work item reference optional in commits (required in PR)
-- **No co-author** - do not include `Co-Authored-By` lines
 
 **Good**: `Recalculate group status when facilitator licence changes`
 **Bad**: `Add handleFacilitator to ProgramGroupViewProcessor`
