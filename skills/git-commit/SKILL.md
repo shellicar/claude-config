@@ -35,7 +35,7 @@ Always `cd` to the project directory first, then use bare `git` commands (e.g., 
 
     If nothing staged, inform the user.
 
-3. **Check for unstaged and untracked changes**
+3. **Check for unstaged, untracked, and gitignored changes**
 
     ```bash
     git status
@@ -45,6 +45,14 @@ Always `cd` to the project directory first, then use bare `git` commands (e.g., 
     - Show the user WHAT the changes are (diff content for modified files, file list for untracked)
     - Use `AskUserQuestion` with options like "Stage them", "Leave unstaged"
     - Stage additional files if requested
+
+    **Gitignored file check**: If you edited any files during this conversation, verify they are visible to git. A file may be gitignored (by `.gitignore` or global gitignore) and silently excluded from `git status`. To check, run:
+
+    ```bash
+    git check-ignore <file-path>
+    ```
+
+    If a file you edited is ignored, warn the user — they may need to `git add -f` it. This is especially important for files like `.claude/CLAUDE.md` or other config files that may be globally gitignored but intended for the repo.
 
 4. **Verify staging is correct**
 

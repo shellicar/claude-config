@@ -19,8 +19,8 @@ Start Date and Target Date field IDs, and the settings keys used for column opti
 | Project | Start Date ID | Target Date ID | Initiative Key | Epic Key | Feature Key | PBI Key |
 |---------|--------------|----------------|----------------|----------|-------------|---------|
 | Eagers | 23873555 | 23873544 | `Custom.c4680640-df9b-4845-a52d-63b3376ef825` | `Microsoft.EpicCategory` | `Microsoft.FeatureCategory` | `ProductBacklogColumnOptions` |
+| CircuitBreaker | 37524899 | 37524888 | `Custom.3ac4ae14-92e5-46ce-a2c4-cbce4f23a58d` | `Microsoft.EpicCategory` | `Microsoft.FeatureCategory` | `ProductBacklogColumnOptions` |
 | Flightrac | 46821680 | 46821669 | — | — | — | — |
-| Hope Ventures | 37524899 | 37524888 | — | — | — | — |
 
 `—` means not yet discovered for that project.
 

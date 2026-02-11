@@ -13,27 +13,54 @@ For org/project detection and the common resource ID, see `azure-devops`.
 
 ```bash
 # List teams
-az rest --method GET \
-  --uri 'https://dev.azure.com/{org}/_apis/projects/{project}/teams' \
-  --resource '499b84ac-1321-427f-aa17-267ca6975798'
+az devops team list --project <Project> -o json
 
-# Team settings (backlog visibility, bugs behaviour, working days)
+# Team iteration assignments
+az boards iteration team list --team "<Team Name>" --project <Project> -o json
+
+# Team area path assignments
+az boards area team list --team "<Team Name>" --project <Project> -o json
+
+# Team settings (backlog visibility, bugs behaviour, working days) - requires REST API
 az rest --method GET \
   --uri 'https://dev.azure.com/{org}/{project}/{team_name}/_apis/work/teamsettings' \
   --resource '499b84ac-1321-427f-aa17-267ca6975798'
-
-# Team area path assignments
-az rest --method GET \
-  --uri 'https://dev.azure.com/{org}/{project}/{team_name}/_apis/work/teamsettings/teamfieldvalues' \
-  --resource '499b84ac-1321-427f-aa17-267ca6975798'
-
-# Team iteration assignments
-az rest --method GET \
-  --uri 'https://dev.azure.com/{org}/{project}/{team_name}/_apis/work/teamsettings/iterations' \
-  --resource '499b84ac-1321-427f-aa17-267ca6975798'
 ```
 
-### Backlog Visibility
+### Team Backlog Filtering
+
+A team's backlog shows items matching **both** area path AND iteration path:
+- Item must be in an area path the team owns (check `az boards area team list`)
+- Item must be in an iteration the team has selected (check `az boards iteration team list`)
+
+Teams can share area paths and differentiate by iteration, or share iterations and differentiate by area.
+
+### Delivery Plans
+
+Delivery plans visualise work across teams on a timeline. Items appear based on their team's backlog.
+
+**Limitation — shared area paths**: When multiple teams own the same area paths, delivery plans show items in multiple team rows even if they belong to only one team's iterations. The [docs warn](https://learn.microsoft.com/en-us/azure/devops/boards/plans/review-team-plans?view=azure-devops#prerequisites): "Eliminate cross-team ownership of area paths to avoid undesirable edge cases."
+
+**Workaround — tag-based field criteria**: Use separate delivery plans per team with tag filtering:
+1. Tag work items with their team type (e.g., "Project" or "Support")
+2. Create per-team delivery plans with field criteria: `Tags contains <TeamType>`
+
+**Note**: Delivery plan field criteria does NOT support Iteration Path or Area Path — only fields like Tags, State, Work Item Type.
+
+**Target Date overrides Iteration**: If a work item has both an Iteration (with dates) and a Target Date, the Target Date overrides the iteration end date on the plan. Avoid setting both — use Iteration for time-boxed work and clear Target Date, or use Start/Target dates for work spanning iterations.
+
+**Same sprints for all levels**: Use the same sprints for Stories, Features, and Epics. Do not create separate sprints for Epics or other portfolio backlogs.
+
+**Epics on delivery plans**: Plans require items to have an iteration with dates or explicit Start/Target dates. Ongoing Epics (capability groupings without time bounds) won't appear. Consider omitting Epics from delivery plans and using backlog hierarchy instead.
+
+### Backlog Visibility Rules
+
+Each team should only enable the backlog levels relevant to their role:
+
+- **Portfolio/Management team**: All levels enabled — Initiatives, Epics, Features, PBIs (for visibility across the whole project)
+- **Feature teams**: Features + PBIs only — Initiatives and Epics disabled (focused on delivery scope)
+
+This keeps backlogs focused and prevents feature teams from being overwhelmed by items they don't own. Management teams use the higher levels to track progress across feature teams.
 
 The `backlogVisibilities` field controls which backlog levels a team sees. Common categories:
 
@@ -75,15 +102,23 @@ az rest --method GET \
 - All area paths with `includeChildren: true`
 - Sees everything, manages at Initiative/Epic level, uses lower levels for visibility
 
-**Feature teams**:
+**Feature teams (area-based)**:
 - Features + PBIs only (Initiative/Epic disabled)
 - Own area path only with `includeChildren: true`
 - Focused on their delivery scope
 
-**"Future" area** (optional):
-- Parking area for ideas not yet assigned to a team
-- Covered by Portfolio team for visibility
-- Items get moved to a feature team's area once they're understood
+**Feature teams (iteration-based)**:
+- All area paths shared (same as portfolio team)
+- Each team owns specific iterations (e.g., Project team owns FPR iterations, Support team owns Support iterations)
+- This keeps area paths independent (area = which app/component, iteration = when/type of work)
+- **Trade-off**: Backlogs work correctly, but delivery plans need tag-based workaround (see Delivery Plans above)
+
+**"Future" iteration** (optional):
+- Parking place for ideas not yet scheduled
+- Items sit at a `Future` iteration path until assigned to a specific sprint/cycle
+- Keeps items out of active team backlogs while remaining visible to the portfolio team
+
+**Reference**: [Configure hierarchical teams](https://learn.microsoft.com/en-us/azure/devops/boards/plans/configure-hierarchical-teams?view=azure-devops) | [Portfolio management](https://learn.microsoft.com/en-us/azure/devops/boards/plans/portfolio-management?view=azure-devops) | [Visibility across teams](https://learn.microsoft.com/en-us/azure/devops/boards/plans/visibility-across-teams?view=azure-devops) | [Agile culture](https://learn.microsoft.com/en-us/azure/devops/boards/plans/agile-culture?view=azure-devops)
 
 ## Audit / Health Checks
 
