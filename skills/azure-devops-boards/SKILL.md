@@ -88,6 +88,76 @@ Azure DevOps hierarchy (top to bottom):
 
 **Reference**: [Define features and epics](https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/define-features-epics?view=azure-devops&tabs=agile-process) | [Organize your backlog](https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/organize-backlog?view=azure-devops)
 
+**Visual guide**: See [references/hierarchy-design.png](references/hierarchy-design.png) for a diagram showing how Area Paths (horizontal swimlanes) and Epics (vertical swimlanes) form an independent matrix, with Features as vertical slices and PBIs at the intersections. Editable source: [references/hierarchy-design.drawio](references/hierarchy-design.drawio)
+
+### Hierarchy Design Principles
+
+#### Name by capability, not motivation
+
+Work item hierarchy should be based on **capability areas** — not the reason for doing the work. Motivations change; capabilities don't.
+
+**Bad**: An "Security" initiative with an "APIM Decommission" epic. If the motivation shifts from security to cost reduction or compliance, the hierarchy breaks — the work hasn't changed, but the label no longer fits.
+**Good**: A "Platform" initiative with an "APIM Decommission" epic. The platform team owns this capability regardless of *why* it's being prioritised this quarter.
+
+The hierarchy should be resistant to arbitrary business decisions about priorities and motivations. If the driving force changes but the work stays the same, the hierarchy should stay the same too.
+
+#### Epics represent domains, not task categories
+
+An epic should answer "what area of the product is this about?" — not "what kind of work is this?"
+
+**Good**: "Identity & Access" — clear domain that naturally accumulates related work (auth flows, user management, credential rotation)
+**Good**: "Decommission legacy API gateway" — goal-based epic with clear scope and a definition of done
+**Bad**: "Operations & Maintenance" — task category that becomes a dumping ground
+**Bad**: "Backlog" — just means "stuff we haven't organised yet"
+**Bad**: "Engineering tasks" — catch-all that avoids the question of where work belongs
+
+The test: *would someone new to the project understand what work belongs here?*
+
+#### Link operational work to the feature it supports
+
+Credential rotation, secret management, and infrastructure changes belong under the feature that depends on them — not in a generic ops bucket. This makes the work discoverable in context. Someone looking at the user management feature should see that it has a Graph API dependency with credentials that need periodic rotation.
+
+#### Features are long-lived capabilities
+
+Features persist across iterations and accumulate PBIs and bugs over time. A PBI is an iteration-scoped deliverable within a feature.
+
+- **Feature**: "easyquote link management" — the capability, lives on indefinitely
+  - **PBI**: "Rotate Graph API client secrets (2026-02)" — a specific deliverable, scoped to one iteration
+  - **PBI**: "Add bulk link creation" — another deliverable in a future iteration
+
+#### Initiatives and Epics set direction; Features and PBIs deliver
+
+In cross-team or cross-area work, Initiatives and Epics represent strategic direction and belong to the platform or portfolio team. Features and PBIs represent the actual delivery and belong to the team doing the work, with area paths matching ownership.
+
+Example: An "APIM Decommission" epic lives under `Platform`, but the "Migrate easyquote API to ASE" feature lives under `easyquote` because that team owns the code changes.
+
+#### Epics are business capabilities, not systems or technologies
+
+Name epics after the business capability, not the specific system that provides it. Systems change; business needs don't.
+
+**Good**: "DMS Integration" — the business will always need a dealer management system for accounting, manufacturer reporting, and financial transactions. Whether it's ERA, TUNE, or eventually distributed microservices, the integration epic persists.
+**Bad**: "ERA Integration" — couples the epic to today's vendor. When ERA is replaced, the epic name is wrong even though the work continues.
+
+A DMS isn't just a database — it's records, business rules, manufacturer relationships, and financial operations (bank transactions, accounting entries). You can build better front-ends and streamline workflows, but the business backbone needs information flowing into it for the business to function. The epic represents that enduring need.
+
+The same applies to other business systems: CRM, accounting, identity providers. Name the epic after *what the business needs*, not *which product provides it today*.
+
+#### Area paths vs Epics: horizontal vs vertical swimlanes
+
+**Area paths** are *horizontal swimlanes* — the system or application (who owns the code):
+- `WebApp` — the customer/dealer-facing web application
+- `Platform` — backend services, API gateways, infrastructure, auth, configuration
+- `DMS` — code running on dealer management system servers
+
+**Epics** are *vertical swimlanes* — what the business needs (the capability or domain):
+- "Deal Workflow" — the core process from deal creation to settlement
+- "Finance & Insurance" — a department's vertical slice through the workflow
+- "DMS Integration" — connecting to the business's operational backbone
+- "Platform Reliability" — keeping systems running, SLAs, monitoring
+- "Identity & Access" — authentication, authorisation, user management
+
+**These are independent dimensions** forming a matrix. Area paths define team ownership and where code runs. Epics define business capability regardless of which team builds it. A "DMS Integration" feature might live under the `Platform` area (because the platform team owns the API layer) while serving work defined in the "Deal Workflow" epic. A "Finance & Insurance" PBI might live under `WebApp` (because it's a UI change) while its parent feature is under a finance epic.
+
 ### Cross-Team Dependencies
 
 Track dependencies between work items using link types:
@@ -229,6 +299,28 @@ Work items are organised along three independent axes:
 - **Iteration Path**: When is this being worked on, and what type of work? (e.g., Project\FPR\9, Support\2026\Feb)
 
 These dimensions are **independent**. A Platform PBI can be in a Project iteration or a Support iteration. An Admin task and a Platform task can both be under the same Feature. Do not couple area paths to team type or iteration type.
+
+#### Planned vs Scheduled: Two Independent Dimensions
+
+Work items exist along two additional independent dimensions beyond hierarchy and area/iteration paths:
+
+**Dimension 1 — Hierarchy Placement (Planned vs Unplanned)**:
+- **Unplanned work**: Future ideas, not yet structured into the Epic/Feature hierarchy
+- **Planned work**: Exists in the backlog hierarchy under an Epic or Feature, defining *what* needs to be built and *why*
+
+**Dimension 2 — Iteration Assignment (Scheduled vs Unscheduled)**:
+- **Unscheduled work**: Not assigned to a specific iteration, no delivery timeline commitment
+- **Scheduled work**: Assigned to an iteration with dates, representing committed delivery
+
+These dimensions are **independent** and create three practical states:
+
+1. **Unplanned & Unscheduled**: Future ideas not yet in the backlog structure
+2. **Planned & Unscheduled**: In the hierarchy (under Epic/Feature) but not assigned to iterations — scope is defined but timing is not committed
+3. **Planned & Scheduled**: In the hierarchy AND assigned to iterations — committed work with delivery timeline
+
+Any work item type (Epic, Feature, PBI, Task) can be scheduled or unscheduled depending on iteration assignment. Higher-level items (Epics, Features) are often planned but unscheduled, defining capability scope without iteration commitment. PBIs are typically both planned and scheduled when ready for delivery.
+
+**For queries and backlog filtering**: Epics and Features appear on backlogs based on their area path and their children's iteration assignments. PBIs appear based on both area path AND iteration path — if a PBI isn't in one of the team's selected iterations, it won't show on their backlog even if the area path matches.
 
 ### Backlog Organisation Workflow
 
@@ -398,3 +490,33 @@ az rest --method POST \
 ```
 
 **Note**: Plain text `#1234` does NOT auto-link for cross-project references. Must use full HTML anchor tag.
+
+### Rich Link Prefixes
+
+Azure DevOps uses different prefixes for different artifact types:
+
+- `#1234` — **Work item** link
+- `!1234` — **Pull request** link
+
+When writing these in HTML descriptions, use the appropriate rich link format below.
+
+### Work Item Rich Links
+
+For work items, use a full URL with `data-vss-mention`:
+
+```html
+<a href="https://dev.azure.com/{org}/{project}/_workitems/edit/{id}/" data-vss-mention="version:1.0">#{id}</a>
+```
+
+### Pull Request Rich Links
+
+For pull requests, use a **relative path** with `data-vss-mention` and `data-pr-title`:
+
+```html
+<a href="/{org}/{project}/_git/{repo}/pullrequest/{id}" data-vss-mention="version:1.0" data-pr-title="{PR title}">!{id}</a>
+```
+
+**Example** (linking PR 6050 in the Architecture repo):
+```html
+<a href="/eagersautomotive/Architecture/_git/Architecture/pullrequest/6050" data-vss-mention="version:1.0" data-pr-title="Handle more status.">!6050</a>
+```
