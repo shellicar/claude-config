@@ -36,6 +36,7 @@
       "Read(~/.claude/skills/**)",
       "WebFetch(domain:next.shadcn-svelte.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__ide__getDiagnostics",
       "Read(/var/folders/s9/*/T/tmp.*)"
     ],
     "deny": [
@@ -64,7 +65,8 @@
       "Write(~/.claude/skills/cli-tools)",
       "Write(~/.gitconfig)",
       "Write(~/.profile)",
-      "Write(~/.zshrc)"
+      "Write(~/.zshrc)",
+      "mcp__ide__executeCode"
     ],
     "defaultMode": "acceptEdits"
   },

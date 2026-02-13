@@ -74,7 +74,7 @@ check_all() {
 if [ "$1" != "--test" ]; then
   INPUT=$(cat)
   echo "$INPUT" >> /tmp/hook-debug.log
-  COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+  COMMAND=$(printf '%s' "$INPUT" | jq -R -s 'fromjson | .tool_input.command // empty')
   check_all
   exit 0
 fi
