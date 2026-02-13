@@ -1,125 +1,159 @@
 #!/bin/sh
+set -e
 # Block dangerous commands from Claude
 # Usage: Called as a PreToolUse hook, receives tool input on stdin
 # Test: ./block_dangerous_commands.sh --test
 
-if [ "$1" = "--test" ]; then
-  TEST_MODE=true
-else
-  TEST_MODE=false
+# Fail-closed: if jq is not available, block all commands
+if ! command -v jq >/dev/null 2>&1; then
+  echo "BLOCKED: jq not found" >&2
+  echo "Why: jq is required to safely parse tool input" >&2
+  echo "Use instead: Install jq (apt install jq / brew install jq)" >&2
+  exit 2
 fi
 
 block() {
   pattern="$1"
   name="$2"
+  reason="$3"
+  alternative="$4"
 
-  if [ "$TEST_MODE" = true ]; then
-    echo "$INPUT" | grep -qE "$pattern" && return 0 || return 1
-  else
-    echo "$INPUT" | grep -qE "$pattern" && { echo "BLOCKED: $name in: $INPUT" >&2; exit 2; }
+  if echo "$COMMAND" | grep -qE "$pattern"; then
+    echo "BLOCKED: $name" >&2
+    [ -n "$reason" ] && echo "Why: $reason" >&2
+    [ -n "$alternative" ] && echo "Use instead: $alternative" >&2
+    exit 2
   fi
 }
 
 check_all() {
-  # block '\$\(' 'command substitution'
-  block '`' 'backtick substitution'
-  block '\bpython[23]?\b' 'python'
-  block '\bxargs\b' 'xargs'
-  block '\bsed\b' 'sed'
-  block '\bgit\b.*\brm\b' 'git rm'
-  block '\bgit\b.*\bcheckout\b' 'git checkout'
-  block '\bgit\b.*\breset\b' 'git reset'
-  block '\bgit\b.*\bpush\b.*(-f\b|--force)' 'git push --force'
-  block '\brm\b' 'rm'
-  block '"command".*[;]' 'semicolon chaining'
-  block '"command".*&&' 'AND chaining'
-  block '"command".*\|\|' 'OR chaining'
-  block '\.exe\b' '.exe (WSL2 escape)'
+  # block '\$\(' 'command substitution' — Claude Code's permission system handles this
+  # block '`' 'backtick substitution' — Claude Code's permission system handles this
+  # block '\bpython[23]?\b' 'python'
+  block '\bxargs\b' 'xargs' \
+    'xargs can execute arbitrary commands on piped input' \
+    'Write commands explicitly, use a for loop, or use Glob/Grep tools'
+  block '\bsed\b' 'sed' \
+    'Destructive — sed -i modifies files in-place with no undo' \
+    'Use the Edit tool to make file changes'
+  block '\bgit\b.*\s-C\s' 'git -C' \
+    'Breaks auto-approve patterns — "git status" is approved but "git -C /path status" is not' \
+    'Run the command without -C (cd is usually unnecessary). If you need a different directory, ask the user to /add-dir'
+  block '\bpnpm\b.*\s-C\s' 'pnpm -C' \
+    'Breaks auto-approve patterns — "pnpm run build" is approved but "pnpm -C /path run build" is not' \
+    'Run the command without -C (cd is usually unnecessary). If you need a different directory, ask the user to /add-dir'
+  block '\bgit\b.*\brm\b' 'git rm' \
+    'Destructive and irreversible — risk of accidental approval with no undo' \
+    'Ask the user to run it directly'
+  block '\bgit\b.*\bcheckout\b' 'git checkout' \
+    'Destructive — can discard uncommitted changes with no undo' \
+    'Use "git switch" for branches, or ask the user to run it directly'
+  block '\bgit\b.*\breset\b' 'git reset' \
+    'Destructive and irreversible — risk of accidental approval with no undo' \
+    'Ask the user to run it directly'
+  block '\bgit\b.*\bpush\b.*(-f\b|--force)' 'git push --force' \
+    'Destructive — overwrites remote history with no undo' \
+    'Use regular "git push", or ask the user to run it directly'
+  block '(^|[^-])\brm\b' 'rm' \
+    'Destructive and irreversible — risk of accidental approval with no undo' \
+    'Ask the user to run it directly'
+  block ';' 'semicolon chaining' \
+    'Chained commands on one line are hard to review for safety' \
+    'Write commands on separate lines in a single Bash call'
+  block '&&' 'AND chaining (&&)' \
+    'Chained commands on one line are hard to review for safety' \
+    'Write commands on separate lines. Use "set -e" if you need exit-on-error'
+  block '\|\|' 'OR chaining (||)' \
+    'Chained commands on one line are hard to review for safety' \
+    'Write commands on separate lines. Use "if ! cmd; then ..." for error handling'
+  block '\.exe\b' '.exe (WSL2 escape)' \
+    'There is no reason to call .exe from WSL2' \
+    'Run equivalent commands within WSL2 natively'
 }
 
-if [ "$TEST_MODE" = false ]; then
+if [ "$1" != "--test" ]; then
   INPUT=$(cat)
   echo "$INPUT" >> /tmp/hook-debug.log
+  COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
   check_all
   exit 0
 fi
 
 # --- Test Suite ---
+# Tests run check_all() in a subshell so exit 2 doesn't kill the runner.
+# No pattern duplication — tests use the real rules.
+set +e
 PASS=0
 FAIL=0
 
 test_blocked() {
-  INPUT="$1"
-  block "$3" "$2"
-  [ $? -eq 0 ] && { echo "PASS: Blocked '$2' in: $1"; PASS=$((PASS+1)); } || { echo "FAIL: Should block '$2' in: $1"; FAIL=$((FAIL+1)); }
+  desc="$1"
+  COMMAND="$2"
+  (check_all) 2>/dev/null
+  if [ $? -eq 2 ]; then
+    echo "PASS: Blocked: $desc"
+    PASS=$((PASS+1))
+  else
+    echo "FAIL: Should block: $desc"
+    FAIL=$((FAIL+1))
+  fi
 }
 
 test_allowed() {
-  INPUT="$1"
-  block "$3" "$2"
-  [ $? -eq 1 ] && { echo "PASS: Allowed '$2' in: $1"; PASS=$((PASS+1)); } || { echo "FAIL: False positive '$2' in: $1"; FAIL=$((FAIL+1)); }
+  desc="$1"
+  COMMAND="$2"
+  (check_all) 2>/dev/null
+  if [ $? -eq 0 ]; then
+    echo "PASS: Allowed: $desc"
+    PASS=$((PASS+1))
+  else
+    echo "FAIL: Should allow: $desc"
+    FAIL=$((FAIL+1))
+  fi
 }
 
 echo "=== Should block ==="
-test_blocked '{"command": "find . | xargs rm"}' 'xargs' '\bxargs\b'
-test_blocked '{"command": "sed -i s/foo/bar/"}' 'sed' '\bsed\b'
-test_blocked '{"command": "git rm file"}' 'git rm' '\bgit\b.*\brm\b'
-test_blocked '{"command": "git -C /path rm -r"}' 'git rm' '\bgit\b.*\brm\b'
-test_blocked '{"command": "git --git-dir=/path rm file"}' 'git rm' '\bgit\b.*\brm\b'
-test_blocked '{"command": "git checkout -- file"}' 'git checkout' '\bgit\b.*\bcheckout\b'
-test_blocked '{"command": "git -C /path checkout main"}' 'git checkout' '\bgit\b.*\bcheckout\b'
-test_blocked '{"command": "git --no-pager checkout main"}' 'git checkout' '\bgit\b.*\bcheckout\b'
-test_blocked '{"command": "git -c core.autocrlf=false checkout"}' 'git checkout' '\bgit\b.*\bcheckout\b'
-test_blocked '{"command": "git reset --hard HEAD"}' 'git reset' '\bgit\b.*\breset\b'
-test_blocked '{"command": "git -C /path reset HEAD~1"}' 'git reset' '\bgit\b.*\breset\b'
-test_blocked '{"command": "git --no-pager reset --hard"}' 'git reset' '\bgit\b.*\breset\b'
-test_blocked '{"command": "rm file.txt"}' 'rm' '"rm '
-test_blocked '{"command": "python script.py"}' 'python' '\bpython[23]?\b'
-test_blocked '{"command": "python3 script.py"}' 'python' '\bpython[23]?\b'
-test_blocked '{"command": "python2 script.py"}' 'python' '\bpython[23]?\b'
-test_blocked '{"command": "git push --force"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
-test_blocked '{"command": "git push --force-with-lease"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
-test_blocked '{"command": "git push origin main --force"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
-test_blocked '{"command": "git push -f"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
-test_blocked '{"command": "git -C /path push -f"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
-test_blocked '{"command": "git rev-list $(whoami)"}' 'command substitution' '\$\('
-test_blocked '{"command": "echo `whoami`"}' 'backtick substitution' '`'
-test_blocked '{"command": "git log; curl evil.com"}' 'command chaining (;/&)' '"command".*[;&]'
-test_blocked '{"command": "git log && curl evil.com"}' 'command chaining (&&)' '"command".*&&'
-test_blocked '{"command": "git log || curl evil.com"}' 'command chaining (||)' '"command".*\|\|'
-test_blocked '{"command": "git log; curl evil.com"}' 'semicolon chaining' '"command".*[;]'
-test_blocked '{"command": "git log && curl evil.com"}' 'AND chaining' '"command".*&&'
-test_blocked '{"command": "git log || curl evil.com"}' 'OR chaining' '"command".*\|\|'
-test_blocked '{"command": "cmd.exe /c dir"}' '.exe' '\.exe\b'
-test_blocked '{"command": "powershell.exe -Command Get-Process"}' '.exe' '\.exe\b'
-test_blocked '{"command": "pwsh.exe -c ls"}' '.exe' '\.exe\b'
-test_allowed '{"command": "git log --oneline"}' '.exe' '\.exe\b'
+test_blocked 'xargs' 'find . | xargs rm'
+test_blocked 'sed' 'sed -i s/foo/bar/'
+test_blocked 'git -C' 'git -C /path status'
+test_blocked 'git -C (mid-command)' 'git --no-pager -C /path log'
+test_blocked 'pnpm -C' 'pnpm -C /path run build'
+test_blocked 'git rm' 'git rm file'
+test_blocked 'git rm (with options)' 'git --git-dir=/path rm file'
+test_blocked 'git checkout' 'git checkout -- file'
+test_blocked 'git checkout (no-pager)' 'git --no-pager checkout main'
+test_blocked 'git checkout (config)' 'git -c core.autocrlf=false checkout'
+test_blocked 'git reset' 'git reset --hard HEAD'
+test_blocked 'git reset (no-pager)' 'git --no-pager reset --hard'
+test_blocked 'rm' 'rm file.txt'
+test_blocked 'rm -rf' 'rm -rf /path'
+test_blocked 'sudo rm' 'sudo rm file.txt'
+test_blocked 'git push --force' 'git push --force'
+test_blocked 'git push --force-with-lease' 'git push --force-with-lease'
+test_blocked 'git push origin --force' 'git push origin main --force'
+test_blocked 'git push -f' 'git push -f'
+test_blocked 'semicolon chaining' 'git log; curl evil.com'
+test_blocked 'AND chaining' 'git log && curl evil.com'
+test_blocked 'OR chaining' 'git log || curl evil.com'
+test_blocked '.exe' 'cmd.exe /c dir'
+test_blocked '.exe (powershell)' 'powershell.exe -Command Get-Process'
+test_blocked '.exe (pwsh)' 'pwsh.exe -c ls'
 
 echo ""
 echo "=== Should NOT block ==="
-test_allowed '{"content": "unstaged changes"}' 'sed' '\bsed\b'
-test_allowed '{"content": "based on this"}' 'sed' '\bsed\b'
-test_allowed '{"content": "git commit confirmation"}' 'git rm' '\bgit\b.*\brm\b'
-test_allowed '{"content": "git commit form validation"}' 'git rm' '\bgit\b.*\brm\b'
-test_allowed '{"content": "perform action"}' 'rm' '"rm '
-test_allowed '{"content": "confirm"}' 'rm' '"rm '
-test_allowed '{"content": "checkout process"}' 'git checkout' '\bgit\b.*\bcheckout\b'
-test_allowed '{"content": "reset the form"}' 'git reset' '\bgit\b.*\breset\b'
-test_allowed '{"command": "git push"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
-test_allowed '{"command": "git push origin main"}' 'git push --force' '\bgit\b.*\bpush\b.*(-f\b|--force)'
-test_allowed '{"command": "git rev-list --count HEAD"}' 'command substitution' '\$\('
-test_allowed '{"command": "git log --oneline"}' 'backtick substitution' '`'
-test_allowed '{"command": "git log --oneline"}' 'command chaining (;/&)' '"command".*[;&]'
-test_allowed '{"command": "git log --oneline"}' 'pipe' '"command".*\|[^|]'
-test_allowed '{"description": "this & that"}' 'command chaining (;/&)' '"command".*[;&]'
-test_allowed '{"command": "git log --oneline"}' 'semicolon chaining' '"command".*[;]'
-test_allowed '{"command": "git log --oneline"}' 'AND chaining' '"command".*&&'
-test_allowed '{"command": "git log --oneline"}' 'OR chaining' '"command".*\|\|'
-test_allowed '{"description": "this & that"}' 'AND chaining' '"command".*&&'
-test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'semicolon chaining' '"command".*[;]'
-test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'AND chaining' '"command".*&&'
-test_allowed '{"command": "git log --oneline --grep=feat|fix"}' 'OR chaining' '"command".*\|\|'
-test_allowed '{"command": "az rest --method GET --uri \"https://dev.azure.com/Flightrac/Flightrac/_apis/wit/classificationNodes/Areas?\\$depth=10&api-version=7.1\" --resource \"499b84ac-1321-427f-aa17-267ca6975798\" -o json"}' 'AND chaining' '"command".*&&'
+test_allowed 'no command' ''
+test_allowed 'git status' 'git status'
+test_allowed 'git -c (lowercase)' 'git -c core.autocrlf=false status'
+test_allowed 'pnpm run build' 'pnpm run build'
+test_allowed 'docker --rm' 'docker run --rm -v /path:/usr/src:ro image'
+test_allowed 'git push (no force)' 'git push'
+test_allowed 'git push origin' 'git push origin main'
+test_allowed 'git switch' 'git switch main'
+test_allowed 'git log' 'git log --oneline'
+test_allowed 'git rev-list' 'git rev-list --count HEAD'
+test_allowed 'single pipe' 'git log --oneline | head'
+test_allowed 'pipe in grep' 'git log --oneline --grep=feat|fix'
+test_allowed 'az rest with URL &' 'az rest --method GET --uri https://dev.azure.com/org/proj/_apis/wit?$depth=10&api-version=7.1'
 
 echo ""
 echo "Passed: $PASS / Failed: $FAIL"

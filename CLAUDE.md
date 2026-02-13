@@ -86,6 +86,8 @@ Before whistling, verify:
 
 The working directory set via `cd` **persists between separate Bash tool calls**. Use `cd` to change directory once, then run subsequent commands without path prefixes or `cd && command` chaining.
 
+**Working directory enforcement**: If you `cd` outside of registered working directories, the shell resets you back to the primary working directory. Use `/add-dir` to register additional directories. There is no env var or API to discover registered directories — you must remember them from context.
+
 # Git Safety Protocol
 
 **NEVER** without explicit user request:
