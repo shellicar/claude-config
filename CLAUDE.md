@@ -84,9 +84,13 @@ Before whistling, verify:
 
 # Bash Tool
 
-The working directory set via `cd` **persists between separate Bash tool calls**. Use `cd` to change directory once, then run subsequent commands without path prefixes or `cd && command` chaining.
+The working directory set via `cd` **persists between separate Bash tool calls**. You start in the primary working directory and almost never need to `cd`.
 
-**Working directory enforcement**: If you `cd` outside of registered working directories, the shell resets you back to the primary working directory. Use `/add-dir` to register additional directories. There is no env var or API to discover registered directories — you must remember them from context.
+**Rules**:
+- **Don't `cd` to where you already are.** Run `pwd` if unsure — don't blindly prepend `cd /path` to every command.
+- **`cd` within/below a registered working directory persists** across Bash calls. Use `cd subdir` once, then run subsequent commands without repeating the `cd`.
+- **`cd` outside registered working directories resets** — the output will include "Shell cwd was reset to /path/to/primary". Use `/add-dir` to register additional directories.
+- There is no env var or API to discover registered directories — you must remember them from context.
 
 # Git Safety Protocol
 
