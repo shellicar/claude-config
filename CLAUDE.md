@@ -104,6 +104,10 @@ The working directory set via `cd` **persists between separate Bash tool calls**
 - Fix the issue
 - Create a NEW commit (do NOT amend - the previous commit didn't happen)
 
+# Context Compaction
+
+After a context compaction, briefly summarise your understanding of the current task state and confirm with the Supreme Commander before continuing work. Do not assume the summary is accurate.
+
 # Pull Requests
 
 Do NOT include a "Test plan" section in PRs. Follow the `github-pr` skill for PR format.
