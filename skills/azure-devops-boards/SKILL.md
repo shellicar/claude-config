@@ -79,12 +79,13 @@ chmod +x /tmp/migrate-items.sh
 ## Work Item Hierarchy
 
 Azure DevOps hierarchy (top to bottom):
-- **Epic**: Large initiative
-- **Feature**: Major capability
-- **PBI (Product Backlog Item)**: Deliverable work
-- **Task**: Specific implementation step
+- **Initiative** (custom portfolio level): The product or strategic programme. The top-level container.
+- **Epic**: Business capability domain. Answers "what area of the product is this about?" Vertical swimlane in the capability matrix.
+- **Feature**: Long-lived vertical slice capability within an Epic. Accumulates PBIs over time. Cross-iteration by nature.
+- **PBI (Product Backlog Item)**: A specific deliverable. The unit of scheduled work, scoped to one iteration.
+- **Task**: Implementation step within a PBI.
 
-**Note**: Custom portfolio backlog levels (e.g., Initiative) may exist above Epic. Query the project's process to find configured backlog levels.
+**Note**: Initiative is a custom portfolio backlog level. Query the project's process to find configured backlog levels.
 
 **Reference**: [Define features and epics](https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/define-features-epics?view=azure-devops&tabs=agile-process) | [Organize your backlog](https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/organize-backlog?view=azure-devops)
 
@@ -117,6 +118,12 @@ The test: *would someone new to the project understand what work belongs here?*
 
 Credential rotation, secret management, and infrastructure changes belong under the feature that depends on them — not in a generic ops bucket. This makes the work discoverable in context. Someone looking at the user management feature should see that it has a Graph API dependency with credentials that need periodic rotation.
 
+#### Active vs Future hierarchy depth
+
+**Active/committed work** must follow the full hierarchy: Initiative → Epic → Feature → PBI → Task. Every level should be present.
+
+**Future/uncommitted work** (ideas, not yet planned) can skip levels: Initiative → PBI is fine. Structure comes when work is committed — don't pre-build Epic/Feature scaffolding for ideas that may never happen.
+
 #### Features are long-lived capabilities
 
 Features persist across iterations and accumulate PBIs and bugs over time. A PBI is an iteration-scoped deliverable within a feature.
@@ -125,11 +132,29 @@ Features persist across iterations and accumulate PBIs and bugs over time. A PBI
   - **PBI**: "Rotate Graph API client secrets (2026-02)" — a specific deliverable, scoped to one iteration
   - **PBI**: "Add bulk link creation" — another deliverable in a future iteration
 
-#### Initiatives and Epics set direction; Features and PBIs deliver
+#### Work item ownership by team level
 
-In cross-team or cross-area work, Initiatives and Epics represent strategic direction and belong to the platform or portfolio team. Features and PBIs represent the actual delivery and belong to the team doing the work, with area paths matching ownership.
+Microsoft's recommended team structure explicitly separates portfolio management from delivery:
 
-Example: An "APIM Decommission" epic lives under `Platform`, but the "Migrate easyquote API to ASE" feature lives under `easyquote` because that team owns the code changes.
+- **Management/Portfolio team**: Owns **Initiatives, Epics, and Features**
+- **Feature/Delivery teams**: Own **PBIs/Stories and Tasks**
+
+![Microsoft team structure diagram](references/pm-team-structure.png)
+
+**Reference**: [Manage product and portfolio backlogs](https://learn.microsoft.com/en-us/azure/devops/boards/plans/portfolio-management?view=azure-devops)
+
+#### Area path and iteration assignment rules
+
+**Initiatives, Epics, and Features**: Always at **root area path** and **root iteration**.
+
+- These are capability domains and vertical slices — they don't belong to a single system or component.
+- Even if all current PBIs under a Feature happen to be in one area, the Feature itself stays at root. Today's "all apples" may become "apples and oranges" tomorrow. Setting the area locks in an assumption that may not hold.
+- Iterations are cross-cutting for the same reason — a Feature may accumulate PBIs across different iteration cadences.
+
+**PBIs and Tasks**: Specific **leaf area path** (which app/component owns the code) and specific **leaf iteration** (when the work is scheduled).
+
+- This is where the matrix comes alive: PBIs under the same Feature can have different area paths, and PBIs under the same Feature can be in different iterations.
+- The PBI declares what it actually is — which system it touches and when it's being delivered.
 
 #### Epics are business capabilities, not systems or technologies
 
@@ -229,14 +254,42 @@ Look for the `multilineFieldsFormat` field in the output.
 
 ### HTML Format (Default)
 
-- Wrap each line in `<div>` tags for proper line breaks
-- Use `<div><br></div>` for blank lines between paragraphs
-- Plain newlines in the CLI won't render as line breaks
+Use semantic HTML with `<span>`, `<div>`, `<ul>/<li>` for structure:
+
+- `<span>` for inline text
+- `<div>` for block-level sections and paragraph separation
+- `<div><br> </div>` for blank lines between sections
+- `<ul>` / `<li>` for lists
+- Nested `<ul>` inside a `<li>` for sub-items (indented detail/context)
+- `<br>` for line breaks within a block
+- Section headings as plain text followed by `<br>` then a list
 
 **Example:**
-```bash
-az boards work-item update --id <ID> --fields "System.Description=<div>First line.</div><div><br></div><div>Second paragraph.</div><div>Third line.</div>"
+```html
+<span>Summary of the feature or work item.<br></span>
+<div><br> </div>
+<div>Previous work completed:<br> </div>
+<span>
+  <ul>
+    <li><span>First completed item</span> </li>
+    <li><span>Second completed item</span> </li>
+    <ul>
+      <li><span>additional context or detail about the second item</span> </li>
+    </ul>
+  </ul>
+</span>
+Remaining:
+<div>
+  <ul>
+    <li><span>First remaining item</span> </li>
+    <ul>
+      <li><span>additional context about this item</span> </li>
+    </ul>
+  </ul>
+</div>
 ```
+
+**Do NOT** use plain `<div>` per line — use the structured format above with spans, lists, and nested lists for readability.
 
 ### Markdown Format (When Enabled)
 
@@ -294,11 +347,14 @@ az boards query --wiql "SELECT [System.Id], [System.Title], [Microsoft.VSTS.Comm
 ### Three Independent Dimensions
 
 Work items are organised along three independent axes:
-- **Hierarchy** (parent-child): What capability does this belong to? Initiative → Epic → Feature → PBI → Task
-- **Area Path**: Which app or component? (e.g., Admin, Platform, Facilitators, Organisations)
-- **Iteration Path**: When is this being worked on, and what type of work? (e.g., Project\FPR\9, Support\2026\Feb)
 
-These dimensions are **independent**. A Platform PBI can be in a Project iteration or a Support iteration. An Admin task and a Platform task can both be under the same Feature. Do not couple area paths to team type or iteration type.
+- **Hierarchy** (parent-child): What capability does this belong to? Initiative → Epic → Feature → PBI → Task. This is the vertical structure — business capability domains (Epics) broken into long-lived capabilities (Features) broken into deliverables (PBIs) broken into implementation steps (Tasks).
+
+- **Area Path** (horizontal swimlane): Which app or component owns this work? (e.g., Admin, Platform, Facilitators, Organisations). Area paths represent the system or application — where the code lives and who maintains it.
+
+- **Iteration Path** (time-bound): When is this being worked on? Iterations are time-bound periods — they may represent different cadences (monthly support, numbered releases, quarterly planning) depending on the project's workflow. PBIs and Tasks are assigned to specific leaf iterations. Initiatives, Epics, and Features sit at the root iteration (cross-cutting).
+
+These dimensions are **independent** and form a matrix. A Platform PBI can be in a Project iteration or a Support iteration. An Admin task and a Platform task can both be under the same Feature. A Feature under a "Subscriptions" Epic can have PBIs in the Platform area. Do not couple area paths to hierarchy or iteration type.
 
 #### Planned vs Scheduled: Two Independent Dimensions
 
