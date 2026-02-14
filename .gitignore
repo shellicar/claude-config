@@ -11,6 +11,9 @@ projects/
 session-env/
 shell-snapshots/
 stats-cache.json
+statsig/
 tasks/
 telemetry/
 todos/
+.credentials.json
+node_modules/
