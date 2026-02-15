@@ -48,7 +48,7 @@ check_all() {
   block '\bgit\b.*\bcheckout\b' 'git checkout' \
     'Destructive — can discard uncommitted changes with no undo' \
     'Use "git switch" for branches, or ask the user to run it directly'
-  block '\bgit\b.*\breset\b' 'git reset' \
+  block '\bgit\b.*(^|[^-])\breset\b' 'git reset' \
     'Destructive and irreversible — risk of accidental approval with no undo' \
     'Ask the user to run it directly'
   block '\bgit\b.*\bpush\b.*(-f\b|--force)' 'git push --force' \
@@ -149,6 +149,7 @@ test_allowed 'docker --rm' 'docker run --rm -v /path:/usr/src:ro image'
 test_allowed 'git push (no force)' 'git push'
 test_allowed 'git push origin' 'git push origin main'
 test_allowed 'git switch' 'git switch main'
+test_allowed 'git commit --reset-author' 'git commit --amend --reset-author --no-edit'
 test_allowed 'git log' 'git log --oneline'
 test_allowed 'git rev-list' 'git rev-list --count HEAD'
 test_allowed 'single pipe' 'git log --oneline | head'
