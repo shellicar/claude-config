@@ -41,6 +41,12 @@ az boards work-item update --id <ID> --fields "System.IterationPath=<Iteration>"
 # Update work item title
 az boards work-item update --id <ID> --title "New Title"
 
+# Change work item type (e.g. PBI → Feature, Epic → Feature, PBI → Task)
+# WARNING: State fields differ between types (e.g. PBI has Committed, Feature does not).
+# MANDATORY: After changing type, provide a link to the work item for the Supreme Commander
+# to verify the state and fields are correct before continuing.
+az boards work-item update --id <ID> --fields "System.WorkItemType=Feature"
+
 # Add parent relationship
 az boards work-item relation add --id <ID> --relation-type "parent" --target-id <PARENT_ID>
 
@@ -90,6 +96,54 @@ Azure DevOps hierarchy (top to bottom):
 **Reference**: [Define features and epics](https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/define-features-epics?view=azure-devops&tabs=agile-process) | [Organize your backlog](https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/organize-backlog?view=azure-devops)
 
 **Visual guide**: See [references/hierarchy-design.png](references/hierarchy-design.png) for a diagram showing how Area Paths (horizontal swimlanes) and Epics (vertical swimlanes) form an independent matrix, with Features as vertical slices and PBIs at the intersections. Editable source: [references/hierarchy-design.drawio](references/hierarchy-design.drawio)
+
+### Generating Hierarchy Diagrams
+
+Two scripts generate a draw.io diagram from live Azure DevOps data:
+
+1. **Extract** hierarchy data from Azure DevOps into JSON
+2. **Generate** a draw.io diagram from that JSON
+
+#### Usage
+
+From the `output/` directory, run both scripts. Output filenames are automatic.
+
+```bash
+cd ~/.claude/skills/azure-devops-boards/output
+
+# Step 1: Extract → {project}-hierarchy.json
+python3 ../references/extract-hierarchy.py --org <org-name> --project <Project> --initiatives <ID>[,<ID>,...]
+
+# Step 2: Generate → {project}-hierarchy.drawio
+python3 ../references/gen-hierarchy.py <project>-hierarchy.json
+```
+
+**Extract options:**
+- `--org`: Azure DevOps org name (e.g., `flightrac`) or full URL
+- `--project`: Project name (e.g., `Flightrac`)
+- `--initiatives`: Comma-separated initiative IDs (numeric) or titles (string, searched via WIQL)
+- `--output FILE`: Override output filename
+- `--stdout`: Print to stdout instead of file
+
+Requires `az` CLI with active login. Walks Initiative → Epic → Feature → PBI via work item relations. Features on the root area path are resolved from their PBI areas automatically.
+
+**Generate options:**
+- First arg: Input JSON file (from extract step)
+- `--output FILE`: Override output filename
+- `--stdout`: Print to stdout instead of file
+
+Creates one page per initiative with Area Paths as horizontal swimlanes and Epics as vertical swimlanes. Features and PBIs are placed in the grid cells. Feature label heights are calculated dynamically based on title length.
+
+**Example (Flightrac):**
+```bash
+cd ~/.claude/skills/azure-devops-boards/output
+python3 ../references/extract-hierarchy.py --org flightrac --project Flightrac --initiatives 36
+python3 ../references/gen-hierarchy.py flightrac-hierarchy.json
+```
+
+#### Output directory
+
+Generated files go in `output/` which is gitignored (`*.drawio`, `*.json`, `*.png`). Open `.drawio` files in [draw.io desktop](https://github.com/jgraph/drawio-desktop) or at [app.diagrams.net](https://app.diagrams.net).
 
 ### Hierarchy Design Principles
 
@@ -166,6 +220,29 @@ Name epics after the business capability, not the specific system that provides 
 A DMS isn't just a database — it's records, business rules, manufacturer relationships, and financial operations (bank transactions, accounting entries). You can build better front-ends and streamline workflows, but the business backbone needs information flowing into it for the business to function. The epic represents that enduring need.
 
 The same applies to other business systems: CRM, accounting, identity providers. Name the epic after *what the business needs*, not *which product provides it today*.
+
+#### Hierarchy = ownership, not taxonomy
+
+The hierarchy answers **"who is responsible for this?"** — not "where does this sit?"
+
+- **Epic**: Who owns this domain? Which person or team is accountable?
+- **Feature**: An aggregation — a grouping of related PBIs under the same owner. Not designed top-down, but emerges from the PBIs.
+- **Area path**: What system or component does the work touch?
+- **Iteration**: When is it happening?
+
+**The flow is bottom-up through ownership:**
+1. You have a **PBI** — the real work
+2. You ask **who is responsible?** — that gives you the **Epic**
+3. The **Feature** emerges as the natural grouping of related PBIs under that Epic
+
+Don't start top-down by decomposing Initiatives into Epics into Features. Start with the work (PBI), determine the owner (Epic), and let the Feature crystallise as the link between them.
+
+This also means not every Epic needs to be a product capability. A startup (or any business) has real work that isn't building software:
+- **Investment & Fundraising** — external/investor-facing
+- **Internal Communications** — team engagement and reporting
+- **Worker Compliance**, **Security** — operational domains
+
+These are legitimate Epics representing business domains with clear ownership. The board reflects the whole business, not just the codebase. Think of it like assets and liabilities — both are necessary, both need tracking, they're just different sides of the coin.
 
 #### Area paths vs Epics: horizontal vs vertical swimlanes
 

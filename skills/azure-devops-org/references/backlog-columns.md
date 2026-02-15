@@ -20,7 +20,7 @@ Start Date and Target Date field IDs, and the settings keys used for column opti
 |---------|--------------|----------------|----------------|----------|-------------|---------|
 | Eagers | 23873555 | 23873544 | `Custom.c4680640-df9b-4845-a52d-63b3376ef825` | `Microsoft.EpicCategory` | `Microsoft.FeatureCategory` | `ProductBacklogColumnOptions` |
 | CircuitBreaker | 37524899 | 37524888 | `Custom.3ac4ae14-92e5-46ce-a2c4-cbce4f23a58d` | `Microsoft.EpicCategory` | `Microsoft.FeatureCategory` | `ProductBacklogColumnOptions` |
-| Flightrac | 46821680 | 46821669 | — | — | — | — |
+| Flightrac | 46821680 | 46821669 | `Custom.7bf87d7b-c5ed-4063-b9aa-c9f643fa275c` | `Microsoft.EpicCategory` | `Microsoft.FeatureCategory` | `ProductBacklogColumnOptions` |
 
 `—` means not yet discovered for that project.
 
