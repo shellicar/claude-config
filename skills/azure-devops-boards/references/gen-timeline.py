@@ -261,15 +261,10 @@ def generate_page(data, page_id):
     cell("legend_bg", "", S_LEGEND_BG, COL_START_X, legend_y, 800, legend_h)
     cell("legend_title", "Legend", S_LEGEND_TITLE, COL_START_X + 15, legend_y + 8, 100, 25)
 
-    # Build legend items from discovered tracks
-    legend_items = []
-    for track_name, tidx in sorted(seen_tracks.items(), key=lambda x: x[1]):
-        cidx = tidx % len(TRACK_COLOURS)
-        fill, stroke = TRACK_COLOURS[cidx]
-        legend_items.append((fill, stroke, "rounded=1", f"{track_name} iteration"))
-
-    legend_items.append(("#d5e8d4", "#82b366", "rounded=1", "Area Path \u2014 the system or component"))
-    legend_items.append(("#f8cecc", "#b85450", "rounded=0", "PBI \u2014 deliverable work item"))
+    legend_items = [
+        ("#d5e8d4", "#82b366", "rounded=1", "Area Path \u2014 the system or component"),
+        ("#f8cecc", "#b85450", "rounded=0", "PBI \u2014 deliverable work item"),
+    ]
 
     for li, (fill, stroke, shape, desc) in enumerate(legend_items):
         ly = legend_y + 38 + li * 18

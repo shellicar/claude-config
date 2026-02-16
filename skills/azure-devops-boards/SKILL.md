@@ -99,49 +99,98 @@ Azure DevOps hierarchy (top to bottom):
 
 ### Generating Hierarchy Diagrams
 
-Two scripts generate a draw.io diagram from live Azure DevOps data:
+Three scripts generate draw.io diagrams from live Azure DevOps data:
 
 1. **Extract** hierarchy data from Azure DevOps into JSON
-2. **Generate** a draw.io diagram from that JSON
+2. **Generate hierarchy diagram** — area paths x epics matrix
+3. **Generate timeline diagram** — area paths x iterations matrix
 
-#### Usage
-
-From the `output/` directory, run both scripts. Output filenames are automatic.
+#### Step 1: Extract Hierarchy Data
 
 ```bash
 cd ~/.claude/skills/azure-devops-boards/output
 
-# Step 1: Extract → {project}-hierarchy.json
+# Extract → {project}-hierarchy.json
 python3 ../references/extract-hierarchy.py --org <org-name> --project <Project> --initiatives <ID>[,<ID>,...]
-
-# Step 2: Generate → {project}-hierarchy.drawio
-python3 ../references/gen-hierarchy.py <project>-hierarchy.json
 ```
 
-**Extract options:**
+**Options:**
 - `--org`: Azure DevOps org name (e.g., `flightrac`) or full URL
 - `--project`: Project name (e.g., `Flightrac`)
 - `--initiatives`: Comma-separated initiative IDs (numeric) or titles (string, searched via WIQL)
 - `--output FILE`: Override output filename
 - `--stdout`: Print to stdout instead of file
 
-Requires `az` CLI with active login. Walks Initiative → Epic → Feature → PBI via work item relations. Features on the root area path are resolved from their PBI areas automatically.
+Requires `az` CLI with active login. Walks Initiative → Epic → Feature → PBI via work item relations. Features on the root area path are resolved from their PBI areas automatically. Also extracts iteration dates for use by the timeline generator.
 
-**Generate options:**
+#### Step 2: Generate Hierarchy Diagram
+
+```bash
+# Generate → {project}-hierarchy.drawio
+python3 ../references/gen-hierarchy.py <project>-hierarchy.json
+```
+
+**Options:**
 - First arg: Input JSON file (from extract step)
 - `--output FILE`: Override output filename
 - `--stdout`: Print to stdout instead of file
 
-Creates one page per initiative with Area Paths as horizontal swimlanes and Epics as vertical swimlanes. Features and PBIs are placed in the grid cells. Feature label heights are calculated dynamically based on title length.
+Creates a **single-page** diagram with Area Paths as horizontal swimlanes and Epics as vertical swimlanes. Features and PBIs are placed in the grid cells. Feature label heights are calculated dynamically based on title length.
 
-**Example (Flightrac):**
+**Connected-component grouping**: Initiatives that share area paths are placed side-by-side (horizontal). Independent initiative groups are stacked vertically as separate sections to reduce page width. Uses union-find to detect which initiatives overlap via shared areas. For example, if initiatives A and B both have PBIs in the "Platform" area, they form one section; initiative C with only "easyquote" PBIs forms its own section below.
+
+#### Step 3: Generate Timeline Diagram
+
 ```bash
-cd ~/.claude/skills/azure-devops-boards/output
-python3 ../references/extract-hierarchy.py --org flightrac --project Flightrac --initiatives 36
-python3 ../references/gen-hierarchy.py flightrac-hierarchy.json
+# Generate → {project}-hierarchy-timeline.drawio
+python3 ../references/gen-timeline.py <project>-hierarchy.json
 ```
 
-#### Output directory
+**Options:**
+- First arg: Input JSON file (from extract step)
+- `--output FILE`: Override output filename (default: `{input}-timeline.drawio`)
+- `--stdout`: Print to stdout instead of file
+
+Creates a timeline view with **iterations as columns** (X axis, sorted by start date) and **area paths as rows** (Y axis). Only PBIs in iterations with start/finish dates are shown. Iteration columns are colour-coded by track (parent iteration path). The legend shows area path and PBI swatches.
+
+#### Full Example
+
+```bash
+cd ~/.claude/skills/azure-devops-boards/output
+
+# Extract
+python3 ../references/extract-hierarchy.py --org eagersautomotive --project Uplift --initiatives 7254,7259,7260,7264,7268,7283,7577
+
+# Generate both diagrams
+python3 ../references/gen-hierarchy.py uplift-hierarchy.json
+python3 ../references/gen-timeline.py uplift-hierarchy.json
+```
+
+#### Installing draw.io Desktop
+
+[draw.io desktop](https://github.com/jgraph/drawio-desktop) is required for CLI PNG export. Install per platform:
+
+**macOS** (Homebrew):
+```bash
+brew install --cask drawio
+# Binary: /opt/homebrew/bin/drawio
+```
+
+#### Exporting to PNG
+
+Export all drawio files in the output directory at once:
+
+```bash
+~/.claude/skills/azure-devops-boards/references/export-png.sh
+```
+
+Or export a single file:
+
+```bash
+drawio --export --format png --output <output>.png <input>.drawio
+```
+
+#### Output Directory
 
 Generated files go in `output/` which is gitignored (`*.drawio`, `*.json`, `*.png`). Open `.drawio` files in [draw.io desktop](https://github.com/jgraph/drawio-desktop) or at [app.diagrams.net](https://app.diagrams.net).
 
