@@ -66,7 +66,9 @@ You *MUST* follow this exact protocol if you believe a banned type is necessary:
 
 ## Temporal Type Naming Standards
 
-When naming fields that store temporal data, use suffixes that clearly indicate the js-joda type:
+When naming fields that store temporal data **as plain strings or numbers** (e.g. entity types, DB documents), use suffixes that clearly indicate the js-joda type. This convention exists because the storage type (`string`) is ambiguous — the suffix communicates what the value represents.
+
+**This does NOT apply** when the field already carries a typed schema (e.g. Zod schemas using `localDateV2Schema`, `yearMonthV2Schema`). In those contexts, the type is self-evident from the schema definition, so the suffix is redundant.
 
 | js-joda Type | Naming Convention | Examples |
 |-------------|-------------------|----------|
