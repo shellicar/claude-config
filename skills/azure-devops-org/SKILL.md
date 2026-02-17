@@ -11,17 +11,15 @@ For org/project detection and the common resource ID, see `azure-devops`.
 
 ## Teams
 
+**Listing**: Use MCP `core_list_project_teams` for teams, `work_list_team_iterations` for iteration assignments (see `azure-devops-mcp`).
+
+**Team area assignments and team settings** (backlog visibility, bugs behaviour, working days): MCP does not cover these. Use CLI:
+
 ```bash
-# List teams
-az devops team list --project <Project> -o json
-
-# Team iteration assignments
-az boards iteration team list --team "<Team Name>" --project <Project> -o json
-
 # Team area path assignments
 az boards area team list --team "<Team Name>" --project <Project> -o json
 
-# Team settings (backlog visibility, bugs behaviour, working days) - requires REST API
+# Team settings - requires REST API
 az rest --method GET \
   --uri 'https://dev.azure.com/{org}/{project}/{team_name}/_apis/work/teamsettings' \
   --resource '499b84ac-1321-427f-aa17-267ca6975798'
@@ -31,7 +29,7 @@ az rest --method GET \
 
 A team's backlog shows items matching **both** area path AND iteration path:
 - Item must be in an area path the team owns (check `az boards area team list`)
-- Item must be in an iteration the team has selected (check `az boards iteration team list`)
+- Item must be in an iteration the team has selected (check `work_list_team_iterations` via MCP or `az boards iteration team list`)
 
 Teams can share area paths and differentiate by iteration, or share iterations and differentiate by area.
 

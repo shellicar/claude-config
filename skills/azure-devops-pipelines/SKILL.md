@@ -19,21 +19,9 @@ Ask what they need help with if not clear from context.
 
 ## Pipeline Runs
 
-```bash
-# List recent pipeline runs - ALWAYS use --query-order QueueTimeDesc for fresh results
-az pipelines runs list --project <Project> --query-order QueueTimeDesc --top 10 -o table
+For API operations (list, run, get status, get logs), see `azure-devops-mcp` skill. Key tools: `pipelines_run_pipeline`, `pipelines_get_run`, `pipelines_list_runs`, `pipelines_get_builds`, `pipelines_get_build_status`, `pipelines_get_build_log`.
 
-# List runs for specific pipeline
-az pipelines runs list --project <Project> --pipeline-ids <PipelineId> --query-order QueueTimeDesc -o table
-
-# Show specific run
-az pipelines runs show --project <Project> --id <RunId> -o json
-
-# Queue a pipeline run
-az pipelines run --id <PipelineId> --branch <branch> --project <Project> --org https://dev.azure.com/<org>
-```
-
-**CRITICAL**: Always use `--query-order QueueTimeDesc` when listing pipeline runs. Without this flag, the API may return cached/stale results and miss recently queued or in-progress runs. This is especially important when checking if a pipeline was triggered or monitoring ongoing builds.
+**CRITICAL**: When listing pipeline runs via CLI fallback, always use `--query-order QueueTimeDesc`. Without this flag, the API may return cached/stale results and miss recently queued or in-progress runs.
 
 ## Multi-Stage Pipelines
 
@@ -41,15 +29,7 @@ Multi-stage pipelines (e.g., with approval gates) show as "inProgress" until ALL
 
 ## Pipeline Configuration
 
-To find all pipelines and their YAML source files:
-
-```bash
-# List pipelines
-az pipelines list --project <Project> --org https://dev.azure.com/<org> -o table
-
-# Get YAML file for each pipeline (yamlFilename is nested, use grep)
-az pipelines show --id <ID> --project <Project> --org https://dev.azure.com/<org> -o json | grep -o '"yamlFilename": "[^"]*"'
-```
+Use MCP `pipelines_get_build_definitions` to list pipelines and their YAML source files (see `azure-devops-mcp`).
 
 ## Pipeline Triggers vs Build Validation Policies
 

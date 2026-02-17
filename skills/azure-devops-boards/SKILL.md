@@ -22,65 +22,24 @@ Ask what they need help with if not clear from context.
 
 ## Work Items
 
-```bash
-# Show work item
-az boards work-item show --id <ID>
+For API operations (get, create, update, link, query), see `azure-devops-mcp` skill. Key tools: `wit_get_work_item`, `wit_create_work_item`, `wit_update_work_item`, `wit_work_items_link`, `wit_get_query_results_by_id`.
 
-# Query recent work items
-az boards query --wiql "SELECT [System.Id], [System.Title] FROM WorkItems WHERE [System.CreatedDate] >= @Today - 7 ORDER BY [System.Id] DESC" -o table
+### Type Changes
 
-# Query children of a work item
-az boards query --wiql "SELECT [System.Id], [System.Title], [System.WorkItemType] FROM WorkItems WHERE [System.Parent] = <PARENT_ID>"
+When changing work item type (e.g. PBI → Feature), state fields differ between types (e.g. PBI has Committed, Feature does not). **MANDATORY**: After changing type, provide a link to the work item for the Supreme Commander to verify the state and fields are correct before continuing.
 
-# Create work item (--project is REQUIRED for create)
-az boards work-item create --type "Task" --title "Title" --project "<Project>" --area "<Area>" --iteration "<Iteration>"
+**Note**: Azure DevOps supports changing work item types in the UI, but the underlying API is an internal/undocumented Contribution API. When a type change is needed, create a new item of the correct type, then mark the original as Removed with a link and comment.
 
-# Update work item fields (NO --project flag - work item IDs are globally unique per org)
-az boards work-item update --id <ID> --fields "System.IterationPath=<Iteration>"
+### WIQL Notes
 
-# Update work item title
-az boards work-item update --id <ID> --title "New Title"
+MCP can execute saved queries (`wit_get_query_results_by_id`) but cannot run ad-hoc WIQL. For custom queries, use `az boards query --wiql` (CLI fallback).
 
-# Change work item type (e.g. PBI → Feature, Epic → Feature, PBI → Task)
-# WARNING: State fields differ between types (e.g. PBI has Committed, Feature does not).
-# MANDATORY: After changing type, provide a link to the work item for the Supreme Commander
-# to verify the state and fields are correct before continuing.
-az boards work-item update --id <ID> --fields "System.WorkItemType=Feature"
-
-# Add parent relationship
-az boards work-item relation add --id <ID> --relation-type "parent" --target-id <PARENT_ID>
-
-# Remove parent relationship
-az boards work-item relation remove --id <ID> --relation-type "parent" --target-id <PARENT_ID> -y
-```
-
-### CLI Gotchas
-
-- **`az boards work-item update`**: Does NOT accept `--project`. Work item IDs are globally unique within an org, so only `--org` and `--id` are needed.
-- **`--fields "System.Parent=X"` does NOT work for reparenting**: Setting `System.Parent` via `--fields` silently does nothing. You MUST use `az boards work-item relation remove` (old parent) then `az boards work-item relation add` (new parent) to change parent relationships.
-- **No `az boards work-item list`**: This command does not exist. Use `az boards query` with WIQL instead.
-- **WIQL `ORDER BY` restrictions**: `[System.Parent]` cannot be used in ORDER BY — it throws "The specified field cannot be sorted by". Sort by `[System.Id]` or `[System.WorkItemType]` instead, then process results client-side.
-- **WIQL path values**: Do NOT use a leading backslash. Use `<Project>\Iteration\Path`, not `\<Project>\Iteration\Path`.
+- **`ORDER BY` restrictions**: `[System.Parent]` cannot be used in ORDER BY — sort by `[System.Id]` or `[System.WorkItemType]` instead.
+- **Path values**: Do NOT use a leading backslash in WIQL. Use `<Project>\Iteration\Path`, not `\<Project>\Iteration\Path`.
 
 ### Batch Updates
 
-When updating many work items in a loop, write a shell script to `/tmp/` and execute it (see `cli-tools` skill for why `&&` and `;` are blocked):
-
-```bash
-# Write script to temp file
-cat > /tmp/migrate-items.sh << 'EOF'
-#!/bin/bash
-for id in 100 101 102 103
-do
-  az boards work-item update --id "$id" --iteration 'Project\Iteration\Path' --org https://dev.azure.com/myorg --output none
-  echo "Updated $id"
-done
-EOF
-chmod +x /tmp/migrate-items.sh
-
-# Then execute in a separate Bash call
-/tmp/migrate-items.sh
-```
+MCP supports `wit_update_work_items_batch` for bulk field updates. For complex batch operations (reparenting, conditional logic), write a shell script to `/tmp/` and execute it (see `cli-tools` skill).
 
 ## Work Item Hierarchy
 
@@ -315,18 +274,9 @@ Track dependencies between work items using link types:
 - **Predecessor / Successor**: Time-based dependencies (B can't start until A finishes)
 - **Related**: General association between related work items across teams
 
-```bash
-# Add predecessor link (target must finish before this item can start)
-az boards work-item relation add --id <ID> --relation-type "Predecessor" --target-id <TARGET_ID>
+Use `wit_work_items_link` from `azure-devops-mcp` to add links. Supported link types: `parent`, `child`, `duplicate`, `duplicate of`, `related`, `successor`, `predecessor`, `tested by`, `tests`, `affects`, `affected by`.
 
-# Add successor link
-az boards work-item relation add --id <ID> --relation-type "Successor" --target-id <TARGET_ID>
-
-# Add related link
-az boards work-item relation add --id <ID> --relation-type "Related" --target-id <TARGET_ID>
-```
-
-Dependency lines are visible on [delivery plans](https://learn.microsoft.com/en-us/azure/devops/boards/plans/track-dependencies?view=azure-devops). You can also query for linked items to find cross-team dependencies.
+Dependency lines are visible on [delivery plans](https://learn.microsoft.com/en-us/azure/devops/boards/plans/track-dependencies?view=azure-devops). Use `wit_get_work_item` with `expand: "relations"` to find cross-team dependencies.
 
 ### Node Name Column
 
@@ -334,13 +284,11 @@ Add the **Node Name** column to backlog views to see the leaf node of the area p
 
 ## Iterations & Areas
 
+**Listing**: Use MCP `work_list_iterations` (all project iterations) or `work_list_team_iterations` (team-assigned iterations). See `azure-devops-mcp` skill.
+
+**CRUD (create/delete)**: MCP does not cover area/iteration path CRUD. Use CLI:
+
 ```bash
-# List project iterations
-az boards iteration project list --project "<Project>" --depth 3 -o table
-
-# List project area paths
-az boards area project list --project "<Project>" --depth 2 -o table
-
 # Create iteration (--path is the PARENT path, --name is the new child)
 az boards iteration project create --name "Sprint 1" --path "\<Project>\Iteration\<Parent>" --project "<Project>"
 
@@ -380,42 +328,116 @@ Look for the `multilineFieldsFormat` field in the output.
 
 ### HTML Format (Default)
 
-Use semantic HTML with `<span>`, `<div>`, `<ul>/<li>` for structure:
+Azure DevOps uses specific HTML patterns. Match these exactly — the trailing spaces before closing tags are intentional.
 
-- `<span>` for inline text
-- `<div>` for block-level sections and paragraph separation
-- `<div><br> </div>` for blank lines between sections
-- `<ul>` / `<li>` for lists
-- Nested `<ul>` inside a `<li>` for sub-items (indented detail/context)
-- `<br>` for line breaks within a block
-- Section headings as plain text followed by `<br>` then a list
+#### Paragraphs
 
-**Example:**
+Each paragraph is `<div><span>text</span> </div>` (note trailing space before `</div>`).
+Blank lines between sections: `<div><br> </div>`.
+
 ```html
-<span>Summary of the feature or work item.<br></span>
+<div><span>First paragraph.</span> </div>
 <div><br> </div>
-<div>Previous work completed:<br> </div>
-<span>
-  <ul>
-    <li><span>First completed item</span> </li>
-    <li><span>Second completed item</span> </li>
-    <ul>
-      <li><span>additional context or detail about the second item</span> </li>
-    </ul>
-  </ul>
-</span>
-Remaining:
+<div><span>Second paragraph.</span> </div>
+```
+
+#### Inline formatting
+
+All inside `<span>`:
+- Bold: `<span><b>text</b></span>`
+- Italics: `<span><i>text</i></span>`
+- Underline: `<span><u>text</u></span>`
+- Strikethrough: `<strike>text</strike>`
+- Font colour: `<span style="color:rgb(200, 38, 19) !important;">text</span>`
+- Highlight: `<span style="background-color:rgb(255, 255, 0) !important;">text</span>`
+
+**Note**: Use `!important` on `color` and `background-color` styles — without it, Azure DevOps dark mode overrides the colours.
+
+#### Lists
+
+Bullet lists use `<span>` inside `<li>`. Numbered lists do not.
+
+```html
+<div><span>Bullet points</span> </div>
 <div>
   <ul>
-    <li><span>First remaining item</span> </li>
-    <ul>
-      <li><span>additional context about this item</span> </li>
-    </ul>
+    <li><span>First item</span> </li>
+    <li><span>Second item</span> </li>
   </ul>
+</div>
+<div><span>Numbered list</span> </div>
+<div>
+  <ol>
+    <li>First item </li>
+    <li>Second item </li>
+  </ol>
 </div>
 ```
 
-**Do NOT** use plain `<div>` per line — use the structured format above with spans, lists, and nested lists for readability.
+#### Indentation
+
+Uses `<blockquote>` with inline style. Nest for deeper levels.
+
+```html
+<div><span>Not indented</span> </div>
+<blockquote style="margin:0 0 0 40px;border:none;">
+  <div><span>Indented once</span> </div>
+</blockquote>
+<blockquote style="margin:0 0 0 40px;border:none;">
+  <blockquote style="margin:0 0 0 40px;border:none;">
+    <div><span>Indented twice</span> </div>
+  </blockquote>
+</blockquote>
+```
+
+#### Code blocks
+
+Each line is a `<div>` inside `<pre><code>`:
+
+```html
+<pre><code><div>line1</div><div>line2</div><div>line3</div></code></pre>
+```
+
+#### Mentions
+
+- User: `<a href="#" data-vss-mention="version:2.0,{user-id}">@Name</a>`
+- Work item: `<a href="https://dev.azure.com/{org}/{project}/_workitems/edit/{id}/" data-vss-mention="version:1.0">#{id}</a>`
+- PR: `<a href="/{org}/{project}/_git/{repo}/pullrequest/{id}" data-vss-mention="version:1.0" data-pr-title="{title}">PR {id}: {title}</a>`
+
+#### Images
+
+```html
+<div><img src="{attachment-url}" alt="{filename}"><br> </div>
+```
+
+#### Links
+
+Use `target=_blank` and `rel="noopener noreferrer"` for external links:
+
+```html
+<a href="https://example.com" target=_blank rel="noopener noreferrer">https://example.com</a>
+```
+
+#### Full example
+
+```html
+<div><span>Summary of the feature or work item.</span> </div>
+<div><br> </div>
+<div><span>Previous work completed:</span> </div>
+<div>
+  <ul>
+    <li><span>First completed item</span> </li>
+    <li><span>Second completed item</span> </li>
+  </ul>
+</div>
+<div><span>Remaining:</span> </div>
+<div>
+  <ul>
+    <li><span>First remaining item</span> </li>
+    <li><span>Second remaining item</span> </li>
+  </ul>
+</div>
+```
 
 ### Markdown Format (When Enabled)
 
@@ -537,27 +559,21 @@ Walk through the backlog with the user:
 - Present the current order and ask if anything needs to move
 
 #### 4. Apply Changes
-Use batch update scripts for bulk changes (write to `/tmp/` and execute):
-- Reparenting: `az boards work-item relation add/remove`
-- Area/iteration changes: `az boards work-item update --area/--iteration`
-- State changes: `az boards work-item update --state`
-- Clearing date fields: `az boards work-item update --fields "Microsoft.VSTS.Scheduling.StartDate="`
+Use MCP for individual or batch updates (see `azure-devops-mcp`):
+- Reparenting: `wit_work_items_link` (add parent/child) or `wit_work_item_unlink` (remove)
+- Field updates (area, iteration, state, dates): `wit_update_work_item` or `wit_update_work_items_batch`
+- Clearing date fields: Set to empty string via `wit_update_work_item`
 
-**Note**: Backlog priority (drag-and-drop ordering) can only be changed via the UI or the undocumented Settings API. Use iteration assignment and state to influence effective priority when CLI-only.
+For complex batch operations (conditional logic, loops), write a shell script to `/tmp/` using CLI commands (see `cli-tools` skill).
+
+**Note**: Backlog priority (drag-and-drop ordering) can only be changed via the UI or the undocumented Settings API. Use iteration assignment and state to influence effective priority.
 
 #### 5. Verify
 Re-query the backlog after changes and present the updated view. Compare with the UI if the user has it open.
 
 ### Clearing Fields
 
-To unset/clear a field value, set it to an empty string:
-```bash
-# Clear start date
-az boards work-item update --id <ID> --fields "Microsoft.VSTS.Scheduling.StartDate="
-
-# Clear target date
-az boards work-item update --id <ID> --fields "Microsoft.VSTS.Scheduling.TargetDate="
-```
+To unset/clear a field value, set it to an empty string via `wit_update_work_item` (e.g., set `Microsoft.VSTS.Scheduling.StartDate` to `""`).
 
 ## Move Work Item Between Projects
 
@@ -661,14 +677,10 @@ When an equivalent work item already exists in the target project:
 
 ### Comment Format for Cross-Project Links
 
-Use HTML format with `data-vss-mention` attribute for proper rendering:
+Use `wit_add_work_item_comment` (see `azure-devops-mcp`) with HTML format and `data-vss-mention` attribute for proper rendering:
 
-```bash
-az rest --method POST \
-  --uri "https://dev.azure.com/{org}/{project}/_apis/wit/workItems/{id}/comments?api-version=7.1-preview.4" \
-  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
-  --headers "Content-Type=application/json" \
-  --body '{"text": "<div>Continued in <a href=\"https://dev.azure.com/{org}/{targetProject}/_workitems/edit/{targetId}/\" data-vss-mention=\"version:1.0\">#{targetId}</a> ({Title}) in {targetProject} project as part of work item migration.</div>"}'
+```html
+<div>Continued in <a href="https://dev.azure.com/{org}/{targetProject}/_workitems/edit/{targetId}/" data-vss-mention="version:1.0">#{targetId}</a> ({Title}) in {targetProject} project as part of work item migration.</div>
 ```
 
 **Note**: Plain text `#1234` does NOT auto-link for cross-project references. Must use full HTML anchor tag.
