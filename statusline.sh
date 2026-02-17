@@ -21,8 +21,14 @@ output_tokens=$(echo "$input" | jq -r '.context_window.total_output_tokens // 0'
 ctx_used=$(echo "$input" | jq -r '(.context_window.current_usage | (.input_tokens // 0) + (.output_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0))')
 ctx_size=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
 
+# Current timestamp
+timestamp=$(date '+%d/%m %H:%M:%S')
+
 # Build status line components
 status=""
+
+# Timestamp first (dim, matching tmux/prompt format)
+status+=$(printf '\e[0;90m%s\e[0m ' "$timestamp")
 
 # User@host and directory (green user, blue host, magenta dir)
 status+=$(printf '\e[0;32m%s\e[0m@\e[1;34m%s\e[0m \e[0;35m%s\e[0m' \
