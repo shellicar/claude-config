@@ -8,6 +8,10 @@ user-invocable: false
 
 MCP server providing typed tool access to Azure DevOps APIs. When available, prefer MCP tools over `az` CLI commands for all API operations.
 
+GitHub: https://github.com/microsoft/azure-devops-mcp
+
+Package: `@azure-devops/mcp`
+
 ## Detection
 
 Check if the `ado` MCP is available:
@@ -20,12 +24,14 @@ If `mcp__ado__*` tools appear in results, the MCP is installed and available. If
 
 ## Installation
 
-The MCP server is published by Microsoft: https://github.com/microsoft/azure-devops-mcp
-
-Install for the current user:
+Install for the current user (pin to a specific version):
 
 ```bash
-claude mcp add ado -- npx -y @azure-devops/mcp <org-name>
+# Check latest version
+npm view @azure-devops/mcp dist-tags --json
+
+# Install with pinned version
+claude mcp add ado -- npx -y @azure-devops/mcp@<version> <org-name>
 ```
 
 Replace `<org-name>` with the Azure DevOps organisation name (e.g., `eagersautomotive`).
@@ -218,6 +224,22 @@ Use `repo_update_pull_request` with `autoComplete: true` and `mergeStrategy` to 
 ### Expand Relations
 
 To see parent/child relationships on a work item, use `expand: "relations"` on `wit_get_work_item`.
+
+## Version Management
+
+The MCP server is configured in `~/.claude.json` under `mcpServers.ado`.
+
+**Check the pinned version**:
+```bash
+jq -r '.mcpServers.ado.args[] | select(startswith("@azure-devops/mcp"))' ~/.claude.json
+```
+
+**Check the latest available version**:
+```bash
+npm view @azure-devops/mcp dist-tags --json
+```
+
+**Update the pinned version**: Edit `~/.claude.json` and update the version in the args array (e.g., `@azure-devops/mcp@2.4.0`). Claude CLI must be restarted after changes.
 
 ## Fallback: az CLI
 

@@ -12,6 +12,35 @@ GitHub: https://github.com/upstash/context7
 
 Package: `@upstash/context7-mcp`
 
+## Detection
+
+Check if the `context7` MCP is available:
+
+```
+ToolSearch query: "+context7"
+```
+
+If `mcp__context7__*` tools appear in results, the MCP is installed and available. If not, see [Installation](#installation).
+
+## Installation
+
+Install for the current user (pin to a specific version):
+
+```bash
+# Check latest version
+npm view @upstash/context7-mcp dist-tags --json
+
+# Install with pinned version
+claude mcp add context7 -- npx -y @upstash/context7-mcp@<version>
+```
+
+This adds the server to `~/.claude.json` under `mcpServers`.
+
+**After installing**: Claude CLI must be restarted for the MCP server to become available. Resuming an existing session after restart is sufficient — a brand new session is not required.
+
+**Prerequisites**:
+- Node.js / npm (for `npx`)
+
 ## When to Use
 
 - Generating configuration files (vite, biome, eslint, tsconfig, etc.)
@@ -43,13 +72,12 @@ The MCP server is configured in `~/.claude.json` under `mcpServers.context7`.
 
 **Check the pinned version**:
 ```bash
-# Read the command from ~/.claude.json to see the pinned version
-grep -A5 '"context7"' ~/.claude.json
+jq -r '.mcpServers.context7.args[] | select(startswith("@upstash/context7-mcp"))' ~/.claude.json
 ```
 
 **Check the latest available version**:
 ```bash
-npm view @upstash/context7-mcp version
+npm view @upstash/context7-mcp dist-tags --json
 ```
 
 **Update the pinned version**: Edit `~/.claude.json` and update the version in the command array (e.g., `@upstash/context7-mcp@2.1.1`). Claude CLI must be restarted after changes.
