@@ -1,6 +1,6 @@
 ---
 name: azure-devops-mcp
-description: Azure DevOps MCP server for API operations. Use when the `ado` MCP is available and you need to interact with Azure DevOps (work items, PRs, pipelines, wiki, test plans, search). Prefer MCP tools over `az` CLI when available. Also loaded by other azure-devops skills for API operations.
+description: Azure DevOps MCP server tool reference, installation, and gotchas. Use when interacting with Azure DevOps APIs (work items, PRs, pipelines, wiki, test plans, search). Prefer MCP tools over `az` CLI. Also loaded by other azure-devops skills for API operations.
 user-invocable: false
 ---
 

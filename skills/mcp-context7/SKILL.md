@@ -1,6 +1,6 @@
 ---
 name: mcp-context7
-description: Look up current library documentation using Context7 MCP. Use when generating config files, scaffolding projects, or working with libraries that may have updated since training.
+description: Context7 MCP server for current library documentation. Use when generating config files, scaffolding projects, or working with libraries that may have updated since training.
 user-invocable: true
 ---
 
@@ -48,7 +48,11 @@ This adds the server to `~/.claude.json` under `mcpServers`.
 - Working with libraries that release frequently (build tools, linters, frameworks)
 - When the user asks for "latest" or "current" versions/patterns
 
-## How to Use
+Look up docs **before** generating config or scaffold files — not after.
+
+## Using MCP Tools
+
+MCP tools are deferred — they must be loaded via `ToolSearch` before first use in a session.
 
 Two-step flow:
 
@@ -63,8 +67,6 @@ Two-step flow:
    ToolSearch query: "select:mcp__context7__query-docs"
    mcp__context7__query-docs(context7CompatibleLibraryID: "/vercel/next.js", topic: "configuration")
    ```
-
-Look up docs **before** generating config or scaffold files — not after.
 
 ## Version Management
 
