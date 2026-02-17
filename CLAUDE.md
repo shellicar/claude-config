@@ -104,6 +104,14 @@ The working directory set via `cd` **persists between separate Bash tool calls**
 - Fix the issue
 - Create a NEW commit (do NOT amend - the previous commit didn't happen)
 
+# Stale Tool Output
+
+Tool results become stale over time. Use the mandatory timestamp check to gauge how much time has elapsed since your last response. If significant time has passed, re-run tools before making assertions about file state, git status, or other mutable state.
+
+# Concurrent Changes
+
+The Supreme Commander actively makes changes to the codebase while collaborating. Never assume a previous Read, diff, or status output is still current. If you need to assert the state of a file, re-read or re-diff it first — do not reference old tool output as though it reflects the present.
+
 # Context Compaction
 
 After a context compaction, briefly summarise your understanding of the current task state and confirm with the Supreme Commander before continuing work. Do not assume the summary is accurate.
