@@ -37,6 +37,8 @@
       "WebFetch(domain:next.shadcn-svelte.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "mcp__ide__getDiagnostics",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
       "Read(/var/folders/s9/*/T/tmp.*)"
     ],
     "deny": [
