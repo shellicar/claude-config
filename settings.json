@@ -26,6 +26,8 @@
       "Bash(git rev-list:*)",
       "Bash(git rev-parse:*)",
       "Bash(git show:*)",
+      "Bash(grep *)",
+      "Bash(ls *)",
       "Bash(pnpm audit:*)",
       "Bash(pnpm outdated:*)",
       "Bash(pnpm run type-check:*)",
@@ -48,6 +50,7 @@
       "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [
+      "Bash(*--unsafe*)",
       "Edit(./ecosystem/scripts)",
       "Edit(.git)",
       "Edit(**/package.json)",
@@ -61,6 +64,7 @@
       "Edit(~/.gitconfig)",
       "Edit(~/.profile)",
       "Edit(~/.zshrc)",
+      "mcp__ide__executeCode",
       "Write(./ecosystem/scripts)",
       "Write(.git)",
       "Write(**/package.json)",
@@ -73,8 +77,7 @@
       "Write(~/.claude/skills/cli-tools)",
       "Write(~/.gitconfig)",
       "Write(~/.profile)",
-      "Write(~/.zshrc)",
-      "mcp__ide__executeCode"
+      "Write(~/.zshrc)"
     ],
     "defaultMode": "acceptEdits"
   },
