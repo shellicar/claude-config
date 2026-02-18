@@ -70,13 +70,13 @@ Three scripts generate draw.io diagrams from live Azure DevOps data:
 cd ~/.claude/skills/azure-devops-boards/output
 
 # Extract → {project}-hierarchy.json
-python3 ../references/extract-hierarchy.py --org <org-name> --project <Project> --initiatives <ID>[,<ID>,...]
+python3 ../references/extract-hierarchy.py --org <org-name> --project <Project>
 ```
 
 **Options:**
 - `--org`: Azure DevOps org name (e.g., `flightrac`) or full URL
 - `--project`: Project name (e.g., `Flightrac`)
-- `--initiatives`: Comma-separated initiative IDs (numeric) or titles (string, searched via WIQL)
+- `--initiatives`: Optional. Comma-separated initiative IDs or titles. If omitted, discovers all non-terminal (not Removed/Closed/Done) initiatives automatically
 - `--output FILE`: Override output filename
 - `--stdout`: Print to stdout instead of file
 
@@ -117,8 +117,8 @@ Creates a timeline view with **iterations as columns** (X axis, sorted by start 
 ```bash
 cd ~/.claude/skills/azure-devops-boards/output
 
-# Extract
-python3 ../references/extract-hierarchy.py --org eagersautomotive --project Uplift --initiatives 7254,7259,7260,7264,7268,7283,7577
+# Extract (auto-discovers all non-terminal initiatives)
+python3 ../references/extract-hierarchy.py --org eagersautomotive --project Uplift
 
 # Generate both diagrams
 python3 ../references/gen-hierarchy.py uplift-hierarchy.json
@@ -311,9 +311,12 @@ az boards area project delete --path "\<Project>\Area\<Child>" --project "<Proje
 - **Iteration/area names cannot contain `/`**: Forward slashes are invalid in names. Use `-` instead (e.g., "POC-MVP Bug fixes" not "POC/MVP Bug fixes").
 - **State transitions**: Some states cannot transition directly (e.g., Done → Removed). You may need an intermediate state (Done → New → Removed).
 
-## Work Item Description Formatting
+## Description Formatting (Work Items AND Pull Requests)
 
-**IMPORTANT**: Work item descriptions MUST use HTML format, unless the field has been explicitly converted to markdown via the UI toggle.
+**IMPORTANT**: This formatting guide applies to both work item descriptions and pull request descriptions.
+
+- **Work item descriptions**: Default to HTML. Can be switched to markdown via UI toggle (one-way).
+- **Pull request descriptions**: Markdown. Use standard markdown formatting (headings, bullet lists, code spans, etc.).
 
 ### Check Format First
 

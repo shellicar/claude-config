@@ -54,7 +54,7 @@ cost_fmt=$(printf '%.2f' "${cost:-0}")
 status+=$(printf ' \e[0;36m$%s\e[0m' "$cost_fmt")
 
 # Duration (white)
-status+=$(printf ' 🕐%02d:%02d' "$MINS" "$SECS")
+status+=$(printf ' 🕐 %02d:%02d' "$MINS" "$SECS")
 
 # Input/output tokens (white)
 fmt_tokens() {
@@ -67,12 +67,12 @@ fmt_tokens() {
     printf '%d' "$t"
   fi
 }
-status+=$(printf ' \e[0;37m↓%s ↑%s\e[0m' "$(fmt_tokens "$input_tokens")" "$(fmt_tokens "$output_tokens")")
+status+=$(printf ' \e[0;37m↓ %s ↑ %s\e[0m' "$(fmt_tokens "$input_tokens")" "$(fmt_tokens "$output_tokens")")
 
 # Context window usage
 ctx_used_fmt=$(fmt_tokens "$ctx_used")
 ctx_size_fmt=$(fmt_tokens "$ctx_size")
-status+=$(printf ' 💬%s/%s' "$ctx_used_fmt" "$ctx_size_fmt")
+status+=$(printf ' 💬 %s/%s' "$ctx_used_fmt" "$ctx_size_fmt")
 
 # Context usage with color coding
 if [ -n "$remaining_pct" ]; then

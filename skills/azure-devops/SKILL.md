@@ -67,3 +67,22 @@ When MCP is not available, use `scripts/ado-rest.sh` for `az rest` calls. It han
 ```
 
 **Why**: Claude Code's permission matcher treats `&` as a shell operator, prompting for approval even inside quoted strings. The script constructs multi-param URLs internally, bypassing this limitation.
+
+## Troubleshooting: Token Expiry
+
+When `az` CLI commands or MCP tools fail unexpectedly with auth errors (e.g. "not authorized", 401, 403), check token validity:
+
+```bash
+az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query "expiresOn" -o tsv
+```
+
+The resource ID `499b84ac-1321-427f-aa17-267ca6975798` is the Azure DevOps service principal. This checks the actual DevOps token, not just the general Azure session.
+
+- **Token returned with future expiry**: Token is probably valid — but see caveat below.
+- **Error or past expiry**: Token has expired. The Supreme Commander needs to run `az login` to refresh.
+
+**Caveat**: Company policies (e.g. Conditional Access, session lifetime policies) may revoke or expire tokens before the `expiresOn` time — for example, every 24 hours. If commands fail with auth errors but the token appears valid, the session may have been invalidated by policy. Suggest `az login` regardless.
+
+**Why `get-access-token`**: This is a POST that actively requests a token — if the session is expired, it will fail or return a past expiry. `az account show` will still succeed with an expired token because it only reads local account config. Always use `get-access-token` with the DevOps resource ID for a definitive check.
+
+**Common symptom**: `az repos pr show` fails while `az rest` (with explicit `--resource`) may still work, because they use different token refresh paths. If one fails, check the token and suggest `az login`.

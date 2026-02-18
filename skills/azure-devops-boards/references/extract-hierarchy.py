@@ -3,15 +3,18 @@
 
 Usage:
     cd output/
-    python3 extract-hierarchy.py --org ORG --project PROJECT --initiatives ID[,ID,...]
+    python3 extract-hierarchy.py --org ORG --project PROJECT [--initiatives ID[,ID,...]]
 
 Output defaults to {project}-hierarchy.json in the current directory.
 Override with --output FILE or use --stdout to print to stdout.
 
+When --initiatives is omitted, all non-terminal (not Removed/Closed) initiatives
+in the project are discovered automatically.
+
 Examples:
+    python3 extract-hierarchy.py --org eagersautomotive --project Uplift
     python3 extract-hierarchy.py --org flightrac --project Flightrac --initiatives 36
     python3 extract-hierarchy.py --org eagersautomotive --project EagersProject --initiatives 100,"My Initiative"
-    python3 extract-hierarchy.py --org flightrac --project Flightrac --initiatives 36 --output custom.json
 """
 import argparse
 import json
@@ -256,11 +259,35 @@ def extract(root_id, project, org_url):
     return {"id": root_id, "title": root_title, "epics": epics_out}
 
 
+def discover_initiatives(project, org_url):
+    """Find all non-terminal Initiative work items in the project via WIQL."""
+    wiql = (
+        "SELECT [System.Id], [System.Title] FROM WorkItems "
+        "WHERE [System.WorkItemType] = 'Initiative' "
+        f"AND [System.TeamProject] = '{project}' "
+        "AND [System.State] NOT IN ('Removed', 'Closed', 'Done') "
+        "ORDER BY [System.Id]"
+    )
+    result = subprocess.run(
+        ["az", "rest", "--method", "POST",
+         "--uri", f"{org_url}/{project}/_apis/wit/wiql?api-version=7.1",
+         "--resource", RESOURCE_ID,
+         "--headers", "Content-Type=application/json",
+         "--body", json.dumps({"query": wiql})],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        print(f"WIQL discovery failed:\n{result.stderr.strip()}", file=sys.stderr)
+        sys.exit(1)
+    data = json.loads(result.stdout)
+    return [item["id"] for item in data.get("workItems", [])]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Extract work item hierarchy from Azure DevOps")
     parser.add_argument("--org", required=True, help="Org name or URL")
     parser.add_argument("--project", required=True, help="Project name")
-    parser.add_argument("--initiatives", required=True, help="Comma-separated initiative IDs or titles")
+    parser.add_argument("--initiatives", help="Comma-separated initiative IDs or titles (default: all non-terminal)")
     parser.add_argument("--output", help="Output JSON file (default: {project}-hierarchy.json)")
     parser.add_argument("--stdout", action="store_true", help="Print to stdout instead of file")
     args = parser.parse_args()
@@ -268,9 +295,15 @@ def main():
     org_url = args.org if args.org.startswith("https://") else f"https://dev.azure.com/{args.org}"
     print(f"Extracting from {org_url}/{args.project}", file=sys.stderr)
 
+    if args.initiatives:
+        initiative_ids = [resolve_id(ref, args.project, org_url)
+                          for ref in (s.strip() for s in args.initiatives.split(","))]
+    else:
+        initiative_ids = discover_initiatives(args.project, org_url)
+        print(f"  Discovered {len(initiative_ids)} non-terminal initiatives", file=sys.stderr)
+
     initiatives = []
-    for ref in [s.strip() for s in args.initiatives.split(",")]:
-        item_id = resolve_id(ref, args.project, org_url)
+    for item_id in initiative_ids:
         result = extract(item_id, args.project, org_url)
         if result:
             initiatives.append(result)
