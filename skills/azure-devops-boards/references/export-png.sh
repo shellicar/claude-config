@@ -15,7 +15,7 @@ for f in "$OUTPUT_DIR"/*.drawio; do
     [ -f "$f" ] || continue
     png="${f%.drawio}.png"
     echo "Exporting $(basename "$f") -> $(basename "$png")"
-    drawio --export --format png --output "$png" "$f" >/dev/null
+    drawio --export --format png --output "$png" "$f" --disable-gpu --no-sandbox >/dev/null
     count=$((count + 1))
 done
 

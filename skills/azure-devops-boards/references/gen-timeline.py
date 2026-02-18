@@ -3,6 +3,7 @@
 
 X axis = iterations (sorted by start date), Y axis = area paths.
 Only PBIs in iterations with start/finish dates are shown.
+Features are derived from PBI parent relationships and shown per cell.
 
 Output defaults to {input_basename}-timeline.drawio in the current directory.
 Override with --output FILE or use --stdout to print to stdout.
@@ -12,6 +13,7 @@ Usage:
 """
 import argparse
 import json
+import math
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -33,6 +35,13 @@ LANE_EXTEND_V = 23
 MIN_ROW_H = 60
 HEADER_H = 50
 
+# Feature constants (from gen-hierarchy.py)
+FEAT_LABEL_LINE_H = 14
+FEAT_LABEL_PAD = 6
+FEAT_PAD_BOTTOM = 8
+FEAT_GAP = 10
+FEAT_INSET = 5
+
 # Styles
 S_TITLE = "text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;"
 S_SUBTITLE = "text;html=1;fontSize=11;fontStyle=2;align=center;verticalAlign=middle;fontColor=#666666;"
@@ -41,6 +50,7 @@ S_ROTATED_HEADER = "text;html=1;fontSize=12;fontStyle=5;align=center;verticalAli
 S_AREA = "rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=middle;"
 S_AREA_LANE = "rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=40;dashed=1;dashPattern=12 6;strokeWidth=2;"
 S_ITER_LANE = "rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=40;dashed=1;dashPattern=12 6;strokeWidth=2;"
+S_FEAT = "rounded=1;whiteSpace=wrap;html=1;fontSize=9;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;dashed=1;strokeWidth=2;opacity=60;"
 S_PBI = "rounded=0;whiteSpace=wrap;html=1;fontSize=8;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=middle;"
 S_LEGEND_BG = "rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#cccccc;"
 S_LEGEND_TITLE = "text;html=1;fontSize=12;fontStyle=1;align=left;verticalAlign=middle;"
@@ -81,51 +91,128 @@ def format_date(iso_date):
     return f"{month} {day}"
 
 
-def collect_scheduled_pbis(data):
-    """Collect all PBIs that are in iterations with dates."""
+def feat_label_h(title, feat_id):
+    """Calculate feature label height based on title length and wrapping."""
+    text = f"#{feat_id} {title}"
+    inner_w = COL_W - FEAT_INSET * 2 - 16  # 16px for draw.io internal padding
+    # At fontSize=9 bold, average char width ~5.5px
+    chars_per_line = max(inner_w / 5.5, 10)
+    lines = math.ceil(len(text) / chars_per_line)
+    return FEAT_LABEL_PAD + lines * FEAT_LABEL_LINE_H + FEAT_LABEL_PAD
+
+
+def feat_height(num_pbis, label_h=None):
+    """Height of a feature box containing N PBIs."""
+    if label_h is None:
+        label_h = FEAT_LABEL_PAD * 2 + FEAT_LABEL_LINE_H  # default 1 line
+    return label_h + num_pbis * (PBI_H + PBI_GAP) - PBI_GAP + FEAT_PAD_BOTTOM
+
+
+def collect_scheduled_items(data):
+    """Collect all scheduled PBIs with feature context.
+
+    Returns list of dicts: each PBI dict with added _feat_id and _feat_title
+    (None for orphan PBIs that have no parent feature).
+    """
     iterations = data.get("iterations", {})
     dated = {k for k, v in iterations.items() if "start" in v}
 
-    pbis = []
+    items = []
     for init in data["initiatives"]:
         for epic in init["epics"]:
             for feat in epic.get("features", []):
                 for pbi in feat.get("pbis", []):
                     if pbi.get("iteration") in dated:
-                        pbis.append(pbi)
+                        items.append({
+                            **pbi,
+                            "_feat_id": feat["id"],
+                            "_feat_title": feat["title"],
+                        })
             for opbi in epic.get("orphan_pbis", []):
                 if opbi.get("iteration") in dated:
-                    pbis.append(opbi)
-    return pbis
+                    items.append({
+                        **opbi,
+                        "_feat_id": None,
+                        "_feat_title": None,
+                    })
+    return items
 
 
-def discover_areas(pbis):
-    """Discover unique area paths from PBIs, sorted alphabetically."""
-    return sorted(set(p["area"] for p in pbis))
+def discover_areas(items):
+    """Discover unique area paths from items, sorted alphabetically."""
+    return sorted(set(p["area"] for p in items))
 
 
-def build_grid(pbis, iter_order, areas):
-    """Build mapping of (area, iter_idx) -> list of PBIs."""
+def build_grid(items, iter_order, areas):
+    """Build mapping of (area, iter_idx) -> {features: [...], orphans: [...]}.
+
+    Each feature entry: {"id": int, "title": str, "pbis": [pbi, ...]}
+    Features are ordered by first appearance; PBIs within feature by order found.
+    """
     iter_idx = {path: i for i, path in enumerate(iter_order)}
+    area_set = set(areas)
+
+    # Intermediate: (area, ii) -> feat_id -> [pbis]
+    cell_feats = {}
+    cell_orphans = {}
+    feat_info = {}  # feat_id -> title
+
+    for item in items:
+        ai = item["area"]
+        ii = iter_idx.get(item["iteration"])
+        if ii is None or ai not in area_set:
+            continue
+        key = (ai, ii)
+        fid = item["_feat_id"]
+        if fid is not None:
+            feat_info[fid] = item["_feat_title"]
+            cell_feats.setdefault(key, {}).setdefault(fid, []).append(item)
+        else:
+            cell_orphans.setdefault(key, []).append(item)
+
+    # Assemble grid
     grid = {}
-    for pbi in pbis:
-        ai = pbi["area"]
-        ii = iter_idx.get(pbi["iteration"])
-        if ii is not None and ai in areas:
-            key = (ai, ii)
-            grid.setdefault(key, []).append(pbi)
+    all_keys = set(cell_feats.keys()) | set(cell_orphans.keys())
+    for key in all_keys:
+        features = []
+        for fid, pbis in cell_feats.get(key, {}).items():
+            features.append({
+                "id": fid,
+                "title": feat_info[fid],
+                "pbis": pbis,
+            })
+        grid[key] = {
+            "features": features,
+            "orphans": cell_orphans.get(key, []),
+        }
     return grid
+
+
+def cell_content_height(cell_data):
+    """Calculate content height for a single cell."""
+    h = 0
+    for feat in cell_data["features"]:
+        if h > 0:
+            h += FEAT_GAP
+        lh = feat_label_h(feat["title"], feat["id"])
+        h += feat_height(len(feat["pbis"]), lh)
+    for _ in cell_data["orphans"]:
+        if h > 0:
+            h += FEAT_GAP
+        h += PBI_H + FEAT_PAD_BOTTOM
+    return h
 
 
 def calc_row_heights(areas, num_iters, grid):
     """Calculate height needed for each area row."""
     row_heights = {}
     for area in areas:
-        max_pbis = 0
+        max_h = 0
         for ii in range(num_iters):
-            n = len(grid.get((area, ii), []))
-            max_pbis = max(max_pbis, n)
-        content_h = CELL_PAD_TOP + max_pbis * (PBI_H + PBI_GAP) - PBI_GAP + CELL_PAD_BOTTOM if max_pbis > 0 else 0
+            cell_data = grid.get((area, ii))
+            if cell_data:
+                max_h = max(max_h, cell_content_height(cell_data))
+        content_h = CELL_PAD_TOP + max_h + CELL_PAD_BOTTOM if max_h > 0 else 0
         row_heights[area] = max(content_h, MIN_ROW_H)
     return row_heights
 
@@ -136,19 +223,19 @@ def generate_page(data, page_id):
     extracted = data.get("extracted", "")
     iterations = data.get("iterations", {})
 
-    pbis = collect_scheduled_pbis(data)
-    if not pbis:
+    items = collect_scheduled_items(data)
+    if not items:
         print("  No scheduled PBIs found", file=sys.stderr)
         return None, None
 
-    areas = discover_areas(pbis)
+    areas = discover_areas(items)
 
     # Get dated iterations and sort
     dated_paths = [k for k, v in iterations.items() if "start" in v]
     iter_order = sorted(dated_paths, key=lambda p: iter_sort_key(p, iterations))
 
     num_iters = len(iter_order)
-    grid = build_grid(pbis, iter_order, areas)
+    grid = build_grid(items, iter_order, areas)
     row_heights = calc_row_heights(areas, num_iters, grid)
 
     # Track colours
@@ -174,7 +261,13 @@ def generate_page(data, page_id):
     total_grid_h = cy - GRID_Y
 
     # Legend
-    legend_h = 100
+    legend_items = [
+        ("#d5e8d4", "#82b366", "rounded=1", "Area Path \u2014 the system or component"),
+        ("#fff2cc", "#d6b656", "rounded=1;dashed=1;strokeWidth=2;opacity=60",
+         "Feature \u2014 groups related PBIs (derived from PBI parent)"),
+        ("#f8cecc", "#b85450", "rounded=0", "PBI \u2014 deliverable work item"),
+    ]
+    legend_h = 38 + len(legend_items) * 18 + 12
     legend_y = GRID_Y + total_grid_h + LANE_EXTEND_V + 22
 
     # Page dimensions
@@ -244,27 +337,53 @@ def generate_page(data, page_id):
         cell(f"lane_{safe}", "", S_AREA_LANE,
              area_lane_left, y, area_lane_w, h)
 
-    # PBIs
-    for ii, path in enumerate(iter_order):
-        col_x = COL_START_X + ii * (COL_W + COL_GAP)
-        pw = COL_W - PBI_INSET * 2
+    # Features and PBIs
+    total_features = 0
+    total_pbis = 0
+    for ai, area in enumerate(areas):
+        for ii, path in enumerate(iter_order):
+            col_x = COL_START_X + ii * (COL_W + COL_GAP)
+            cell_data = grid.get((area, ii))
+            if not cell_data:
+                continue
+            cell_y = row_y[area] + CELL_PAD_TOP
 
-        for area in areas:
-            cell_pbis = grid.get((area, ii), [])
-            for pi, pbi in enumerate(cell_pbis):
-                px = col_x + PBI_INSET
-                py = row_y[area] + CELL_PAD_TOP + pi * (PBI_H + PBI_GAP)
-                cell(f"pbi_{pbi['id']}", f"#{pbi['id']} {pbi['title']}", S_PBI,
-                     px, py, pw, PBI_H)
+            for feat in cell_data["features"]:
+                pbis = feat["pbis"]
+                lh = feat_label_h(feat["title"], feat["id"])
+                fh = feat_height(len(pbis), lh)
+                fx = col_x + FEAT_INSET
+                fw = COL_W - FEAT_INSET * 2
+
+                cell(f"feat_{feat['id']}_a{ai}_i{ii}",
+                     f"#{feat['id']} {feat['title']}",
+                     S_FEAT, fx, cell_y, fw, fh)
+                total_features += 1
+
+                for pi, pbi in enumerate(pbis):
+                    px = fx + PBI_INSET
+                    py = cell_y + lh + pi * (PBI_H + PBI_GAP)
+                    pw = fw - PBI_INSET * 2
+                    cell(f"pbi_{pbi['id']}",
+                         f"#{pbi['id']} {pbi['title']}",
+                         S_PBI, px, py, pw, PBI_H)
+                    total_pbis += 1
+
+                cell_y += fh + FEAT_GAP
+
+            for opbi in cell_data["orphans"]:
+                px = col_x + FEAT_INSET + PBI_INSET
+                py = cell_y + 5
+                pw = COL_W - (FEAT_INSET + PBI_INSET) * 2
+                cell(f"pbi_{opbi['id']}",
+                     f"#{opbi['id']} {opbi['title']}",
+                     S_PBI, px, py, pw, PBI_H)
+                cell_y += PBI_H + FEAT_PAD_BOTTOM + FEAT_GAP
+                total_pbis += 1
 
     # Legend
     cell("legend_bg", "", S_LEGEND_BG, COL_START_X, legend_y, 800, legend_h)
     cell("legend_title", "Legend", S_LEGEND_TITLE, COL_START_X + 15, legend_y + 8, 100, 25)
-
-    legend_items = [
-        ("#d5e8d4", "#82b366", "rounded=1", "Area Path \u2014 the system or component"),
-        ("#f8cecc", "#b85450", "rounded=0", "PBI \u2014 deliverable work item"),
-    ]
 
     for li, (fill, stroke, shape, desc) in enumerate(legend_items):
         ly = legend_y + 38 + li * 18
@@ -275,7 +394,8 @@ def generate_page(data, page_id):
     stats = {
         "page_w": int(page_w), "page_h": int(page_h),
         "iterations": num_iters, "areas": len(areas),
-        "pbis": len(pbis), "grid_h": total_grid_h,
+        "features": total_features, "pbis": total_pbis,
+        "grid_h": total_grid_h,
     }
     return diagram, stats
 
@@ -301,7 +421,7 @@ def main():
     print(f"Timeline:", file=sys.stderr)
     print(f"  Size: {stats['page_w']}x{stats['page_h']}", file=sys.stderr)
     print(f"  Iterations: {stats['iterations']}, Areas: {stats['areas']}", file=sys.stderr)
-    print(f"  PBIs: {stats['pbis']}", file=sys.stderr)
+    print(f"  Features: {stats['features']}, PBIs: {stats['pbis']}", file=sys.stderr)
 
     tree = ET.ElementTree(mxfile)
     ET.indent(tree, space="    ")
