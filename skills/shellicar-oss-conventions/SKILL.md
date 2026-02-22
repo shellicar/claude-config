@@ -31,6 +31,33 @@ Match when:
 - Imperative mood
 - No prefix conventions required
 
+## Assignee
+
+Always assign `shellicar` to PRs:
+
+```bash
+gh pr create --title "Title" --body "Description" --assignee shellicar
+gh pr edit --adwd-assignee shellicar
+```
+
+## Labels
+
+Apply labels based on the nature of the changes. Use the branch prefix as a starting hint, but consider the actual content:
+
+| Branch / Content | Label |
+|------------------|-------|
+| `fix/` branch, bug fixes | `bug` |
+| `feature/` branch, new features | `enhancement` |
+| Dependency updates | `dependencies` |
+| Documentation-only changes | `documentation` |
+
+Multiple labels can apply (e.g., a bug fix that also updates docs could get `bug`).
+
+```bash
+gh pr create --title "Title" --body "Description" --label "bug"
+gh pr edit --add-label "bug"
+```
+
 ## PR Workflow
 
 ### 1. Check for Milestone
@@ -60,12 +87,13 @@ gh pr edit --add-milestone "1.2.0"
 
 ### 3. Reference Issues
 
-Link related issues in the PR description using GitHub keywords:
+Link related issues in the PR description using [GitHub closing keywords](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword):
 
-- `Fixes #123` - closes the issue when PR merges
-- `Closes #123` - same as Fixes
-- `Resolves #123` - same as Fixes
-- `Refs #123` - references without closing
+- `close`, `closes`, `closed`
+- `fix`, `fixes`, `fixed`
+- `resolve`, `resolves`, `resolved`
+
+Use `Refs #123` to reference an issue without closing it.
 
 ## PR Description Format
 
@@ -92,7 +120,7 @@ Include `Co-Authored-By: Claude <noreply@anthropic.com>` in the PR description (
 
 ## Issue and Milestone Linking
 
-- **Issues**: Reference with `Fixes #123`, `Closes #123`, or `Refs #123`
+- **Issues**: Reference with closing keywords (`closes`, `fixes`, `resolves`) or `Refs #123` for non-closing references
 - **Milestones**: Every PR must be linked to a version milestone
 
 ## CLI Commands
@@ -102,12 +130,14 @@ Include `Co-Authored-By: Claude <noreply@anthropic.com>` in the PR description (
 gh api repos/{owner}/{repo}/milestones --jq '.[].title'
 gh api repos/{owner}/{repo}/milestones --method POST -f title="1.2.0"
 
-# Create PR with milestone
-gh pr create --title "Title" --body "Description" --milestone "1.2.0"
+# Create PR with milestone, assignee, and label
+gh pr create --title "Title" --body "Description" --milestone "1.2.0" --assignee shellicar --label "bug"
 
 # Update PR
 gh pr edit --title "New title" --body "New description"
 gh pr edit --add-milestone "1.2.0"
+gh pr edit --add-assignee shellicar
+gh pr edit --add-label "bug"
 
 # List PRs
 gh pr list

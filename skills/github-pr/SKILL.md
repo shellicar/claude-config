@@ -171,6 +171,42 @@ If auto-merge selected:
 gh pr merge --auto --squash
 ```
 
+## Post-Creation Verification (GitHub)
+
+After creating a PR (and optionally enabling auto-merge), verify the PR is not blocked. Add a todo item to track this.
+
+### 1. Check PR Status
+
+```bash
+gh pr view <number> --json state,mergeable,mergeStateStatus,statusCheckRollup
+```
+
+Key fields:
+- `mergeStateStatus`: `CLEAN` (ready to merge), `BLOCKED` (checks failing or rules preventing merge), `BEHIND` (needs rebase)
+- `mergeable`: `MERGEABLE`, `CONFLICTING`, `UNKNOWN`
+- `statusCheckRollup`: Array of check runs with `name`, `status`, `conclusion`
+
+### 2. Diagnose Failures
+
+If `mergeStateStatus` is `BLOCKED`, inspect the `statusCheckRollup` for any checks with `conclusion: FAILURE`:
+
+```bash
+# Get the run ID from the detailsUrl in statusCheckRollup, then:
+gh run view <run-id> --log-failed
+```
+
+This shows the failed step's logs, which usually reveals the root cause (e.g., audit failure, test failure, lint error).
+
+### 3. Report and Recommend
+
+After diagnosis, report:
+- Which check(s) failed
+- The root cause from the logs
+- Whether the failure is **introduced by this PR** or **pre-existing on main**
+- Recommended action (fix in this PR, fix in a separate PR first, etc.)
+
+If the failure is pre-existing on main, recommend fixing it in a separate branch/PR so it unblocks all PRs, not just this one.
+
 ## Post-Merge Cleanup (GitHub)
 
 After a PR is merged, clean up branches:
