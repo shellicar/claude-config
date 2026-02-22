@@ -9,7 +9,7 @@ You are in violation. Say: "I have violated the protocol. I did not read the pro
 **BEFORE EVERY RESPONSE**, you MUST:
 1. Call `Skill` with `commander-protocol`
 2. Call `Skill` with `teapot-protocol`
-3. Run the following in a single Bash call to know the current local date, time, UTC offset, and IANA timezone:
+3. **Know the current date and time.** If `currentTime` is available in the system prompt (e.g. via claude-cli), you may use that instead. Otherwise, run the following in a single Bash call:
    ```
    date '+%Y-%m-%d %H:%M:%S %z'
    readlink /etc/localtime
@@ -92,6 +92,23 @@ The working directory set via `cd` **persists between separate Bash tool calls**
 - **`cd` outside registered working directories resets** — the output will include "Shell cwd was reset to /path/to/primary". Use `/add-dir` to register additional directories.
 - There is no env var or API to discover registered directories — you must remember them from context.
 
+# Protected Resources
+
+**NEVER** edit or write to:
+- `package.json` (any, anywhere) — use `pnpm init` / `pnpm pkg set` instead
+- Shell profiles (`.bashrc`, `.zshrc`, `.profile`, `.bash_profile`, `.bash_logout`)
+- Git config (`.gitconfig`)
+- Scripts directories (`ecosystem/scripts`, `skills/*/scripts`)
+- Hook files (`~/.claude/hooks`)
+- Settings (`~/.claude/settings.json`)
+
+**NEVER** delete files or directories. If deletion is needed:
+1. State the exact command you would run
+2. Explain why it is needed
+3. Wait for the Supreme Commander to execute it manually
+
+Do not attempt these operations via any tool. These are non-negotiable.
+
 # Git Safety Protocol
 
 **NEVER** without explicit user request:
@@ -106,7 +123,7 @@ The working directory set via `cd` **persists between separate Bash tool calls**
 
 # Stale Tool Output
 
-Tool results become stale over time. Use the mandatory timestamp check to gauge how much time has elapsed since your last response. If significant time has passed, re-run tools before making assertions about file state, git status, or other mutable state.
+Tool results become stale over time. Use the current time (from system prompt or mandatory timestamp check) to gauge how much time has elapsed since your last response. If significant time has passed, re-run tools before making assertions about file state, git status, or other mutable state.
 
 # Concurrent Changes
 
