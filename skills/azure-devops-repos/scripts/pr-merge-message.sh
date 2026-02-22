@@ -99,7 +99,7 @@ do_set_auto_complete() {
   check_has_title
 
   az repos pr update --id "$PR_ID" --org "$ORG_URL" \
-    --auto-complete true --squash true --transition-work-items true \
+    --auto-complete true --squash true --transition-work-items true --delete-source-branch \
     --merge-commit-message "$EXPECTED_MSG" > /dev/null
   echo "✅ Auto-complete set with merge commit message"
 

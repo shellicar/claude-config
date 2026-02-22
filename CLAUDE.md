@@ -107,6 +107,20 @@ The working directory set via `cd` **persists between separate Bash tool calls**
 2. Explain why it is needed
 3. Wait for the Supreme Commander to execute it manually
 
+**NEVER** run destructive or potentially dangerous commands. This includes:
+- `rm`, `unlink`, `rmdir`
+- `sed` (use the Edit tool instead)
+- `xargs` (write commands explicitly)
+- `git checkout` (use `git switch` for branches; for file restore, make a formal request)
+- `git reset`
+- `git rm`
+
+**NEVER** chain commands with `;`, `&&`, or `||`. Use multi-line scripts instead. If you need exit-on-error behaviour (like `&&`), use `set -e` at the top of the script.
+
+**Why these are banned**: Destructive commands (`rm`, `git reset`, `git checkout`, `git rm`) can cause irreversible data loss with a single accidental approval. `sed` modifies files in-place with no undo — the Edit tool is safer and auditable. `xargs` executes arbitrary commands on piped input, making it hard to review what will actually run. Command chaining (`;`, `&&`, `||`) obscures what's being executed — each command should be visible and reviewable on its own line.
+
+If any of these are genuinely needed, follow the same formal request process above.
+
 Do not attempt these operations via any tool. These are non-negotiable.
 
 # Git Safety Protocol
