@@ -96,3 +96,15 @@ git log @{u}..HEAD --oneline
 ```
 
 Should show no commits (all pushed). If commits remain, report the issue.
+
+### 8. Offer to Create PR
+
+Use `AskUserQuestion` with options like "Create PR" and "Skip".
+
+If the Supreme Commander requests a PR, invoke the appropriate skill based on the loaded convention:
+- **GitHub conventions** → use the `github-pr` skill
+- **Azure DevOps conventions** → use the `azure-devops-repos` skill
+
+If no convention is loaded, infer from the git remote URL:
+- `github.com` → `github-pr`
+- `dev.azure.com` → `azure-devops-repos`
