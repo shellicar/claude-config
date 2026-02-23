@@ -332,7 +332,9 @@ Present the scenario determination to the Supreme Commander and invoke the `secr
 - Which branches need scrubbing
 - The list of values and their replacements
 
-For **Scenario B only**: no history scrub is needed — advise the Supreme Commander to squash-merge the feature branch before pushing. The secret never reaches remote.
+**Scenario B only**: no history scrub is needed — advise the Supreme Commander to squash-merge the feature branch before pushing. The secret never reaches remote.
+
+**Scenarios A, C, D**: the secret has been pushed to a remote and must be considered **compromised**. Inform the Supreme Commander that credential rotation (revoke + replace) is mandatory in addition to history scrubbing. History scrubbing alone does not undo the exposure — platform PR diffs, cached clones, and CI logs may retain the value permanently.
 2. If the count is > 0, the value exists in git history and must be scrubbed
 3. If any values are found in history, inform the Supreme Commander and invoke the `secret-remediation` skill to handle the scrub
 

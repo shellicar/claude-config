@@ -18,14 +18,26 @@ Rewrite git history to remove secrets and PII that were committed. This skill is
 
 Determine which scenario applies:
 
-| Scenario | Secret in main history? | Secret pushed on feature branch? | Action |
-|----------|------------------------|----------------------------------|--------|
-| **A: Main only** | Yes | No | Scrub main with `git-scrub-history.sh` |
-| **B: Feature branch only (not pushed)** | No | No (local only) | Squash-merge the feature branch before pushing — the secret never reaches remote |
-| **C: Feature branch (pushed, PR open)** | No | Yes | Scrub the feature branch too — PR history on the platform retains all commit diffs even after squash merge |
-| **D: Both** | Yes | Yes | Scrub main, then scrub the feature branch (or squash if not yet pushed) |
+| Scenario | Secret in main history? | Secret pushed on feature branch? | Action | Credential Rotation? |
+|----------|------------------------|----------------------------------|--------|---------------------|
+| **A: Main only** | Yes | No | Scrub main with `git-scrub-history.sh` | **YES** — pushed to remote |
+| **B: Feature branch only (not pushed)** | No | No (local only) | Squash-merge the feature branch before pushing — the secret never reaches remote | No — never left local |
+| **C: Feature branch (pushed, PR open)** | No | Yes | Scrub the feature branch and force-push | **YES** — pushed to remote |
+| **D: Both** | Yes | Yes | Scrub main, then scrub the feature branch | **YES** — pushed to remote |
 
-**Key insight:** Once commits are pushed to remote, the platform (GitHub/Azure DevOps) retains PR diffs permanently. Squash-merging only helps if the secret was never pushed. If it was pushed, the branch history must also be scrubbed.
+**Key insight:** Once commits are pushed to remote, the secret is **compromised** — it must be rotated (revoked and replaced) regardless of whether history is scrubbed. Platform PR diffs (GitHub/Azure DevOps) retain all commit content permanently and cannot be purged through git history rewriting. Scrubbing history reduces casual exposure but does not undo the compromise.
+
+## Credential Rotation (Scenarios A, C, D)
+
+For any scenario where the secret was pushed to a remote, the secret must be treated as compromised:
+
+1. **Inform the Supreme Commander** that the secret has been exposed on the remote and must be rotated
+2. **Identify the type of secret** (API key, database password, connection string, etc.)
+3. **Advise rotation steps** — revoke the old credential and generate a new one in the relevant service
+4. **Update references** — after rotation, update any code/config that references the old credential
+5. **Proceed with history scrubbing** — scrub to reduce further exposure, but understand this does not undo the compromise
+
+History scrubbing without rotation is **insufficient** — it only removes the value from `git log` output. The secret remains visible in platform PR diffs, cached clones, CI logs, and any other system that processed the pushed commits.
 
 ## Workflow
 
