@@ -35,20 +35,20 @@ When used in prose, aim to use **bold text** if the design/format allows.
 
 ### Primary Palette
 
-- <span style="background:#FFDE3F;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Yellow** — `#FFDE3F` · RGB 255, 222, 63 · CMYK 0, 10, 85, 0
-- <span style="background:#ED1C24;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Red** — `#ED1C24` · RGB 237, 28, 36 · CMYK 0, 100, 100, 0
-- <span style="background:#28477C;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Dark Blue** — `#28477C` · RGB 40, 71, 124 · CMYK 95, 80, 25, 10
-- <span style="background:#4D4D4F;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Grey** — `#4D4D4F` · RGB 77, 77, 79 · CMYK 0, 0, 0, 85
+- ![Yellow](swatches/yellow.svg) **Yellow** — `#FFDE3F` · RGB 255, 222, 63 · CMYK 0, 10, 85, 0
+- ![Red](swatches/red.svg) **Red** — `#ED1C24` · RGB 237, 28, 36 · CMYK 0, 100, 100, 0
+- ![Dark Blue](swatches/dark-blue.svg) **Dark Blue** — `#28477C` · RGB 40, 71, 124 · CMYK 95, 80, 25, 10
+- ![Grey](swatches/grey.svg) **Grey** — `#4D4D4F` · RGB 77, 77, 79 · CMYK 0, 0, 0, 85
 
 ### Secondary Palette
 
 Secondary colours support the primary palette and should **never dominate or be used alone**.
 
-- <span style="background:#4BA6DD;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Pale Blue** — `#4BA6DD` · RGB 75, 166, 221 · CMYK 65, 20, 0, 0
-- <span style="background:#FDB913;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Pale Orange** — `#FDB913` · RGB 253, 185, 19 · CMYK 0, 30, 100, 0
-- <span style="background:#A3CF62;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Green** — `#A3CF62` · RGB 163, 207, 98 · CMYK 40, 0, 80, 0
-- <span style="background:#E57AB1;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Pink** — `#E57AB1` · RGB 229, 122, 177 · CMYK 5, 65, 0, 0
-- <span style="background:#56C5D0;padding:2px 12px;border:1px solid #ccc">&nbsp;</span> **Aqua** — `#56C5D0` · RGB 86, 197, 208 · CMYK 60, 0, 20, 0
+- ![Pale Blue](swatches/pale-blue.svg) **Pale Blue** — `#4BA6DD` · RGB 75, 166, 221 · CMYK 65, 20, 0, 0
+- ![Pale Orange](swatches/pale-orange.svg) **Pale Orange** — `#FDB913` · RGB 253, 185, 19 · CMYK 0, 30, 100, 0
+- ![Green](swatches/green.svg) **Green** — `#A3CF62` · RGB 163, 207, 98 · CMYK 40, 0, 80, 0
+- ![Pink](swatches/pink.svg) **Pink** — `#E57AB1` · RGB 229, 122, 177 · CMYK 5, 65, 0, 0
+- ![Aqua](swatches/aqua.svg) **Aqua** — `#56C5D0` · RGB 86, 197, 208 · CMYK 60, 0, 20, 0
 
 ## Logo Rules
 
