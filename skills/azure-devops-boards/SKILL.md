@@ -318,6 +318,29 @@ az boards area project delete --path "\<Project>\Area\<Child>" --project "<Proje
 - **Work item descriptions**: Default to HTML. Can be switched to markdown via UI toggle (one-way).
 - **Pull request descriptions**: Markdown. Use standard markdown formatting (headings, bullet lists, code spans, etc.).
 
+### Bug Work Items — Different Description Fields
+
+**CRITICAL**: Bug work items do NOT render `System.Description` in the UI. The visible fields are:
+
+- **`Microsoft.VSTS.TCM.ReproSteps`** — "Repro Steps" (the primary description field for Bugs)
+- **`Microsoft.VSTS.TCM.SystemInfo`** — "System Info"
+- **`Microsoft.VSTS.Common.AcceptanceCriteria`** — "Acceptance Criteria"
+
+When writing descriptions for Bugs, **always use `Microsoft.VSTS.TCM.ReproSteps`** instead of `System.Description`. Content written to `System.Description` on a Bug will exist in the API but will not be visible in the Azure DevOps UI.
+
+Use the same HTML formatting conventions as `System.Description`. Structure Bug descriptions with `<h2>` sections:
+
+```html
+<h2>Problem</h2>
+<p>What the user observed or what went wrong.</p>
+
+<h2>Root Cause</h2>
+<p>Technical explanation of why it happened.</p>
+
+<h2>Fix</h2>
+<p>What was done to resolve it.</p>
+```
+
 ### Check Format First
 
 Query the work item to check if markdown is enabled:
@@ -449,6 +472,23 @@ If the description field has been converted to markdown, use standard markdown s
 **Note**: Once a field is set to markdown mode, you cannot switch back to HTML. The toggle is one-way.
 
 **Markdown syntax reference**: https://learn.microsoft.com/en-us/azure/devops/project/wiki/markdown-guidance
+
+### Work Item References in Descriptions
+
+**IMPORTANT**: When referencing other work items in description text, ALWAYS use the rich link HTML format — never plain `#123`.
+
+Plain `#123` does NOT render as a clickable link in Azure DevOps descriptions. Use:
+
+```html
+<a href="https://dev.azure.com/{org}/{project}/_workitems/edit/{id}/" data-vss-mention="version:1.0">#{id}</a>
+```
+
+**Example** (linking work item 503 in CircuitBreaker):
+```html
+See <a href="https://dev.azure.com/hopeventures/CircuitBreaker/_workitems/edit/503/" data-vss-mention="version:1.0">#503</a> for the workflow.
+```
+
+This applies everywhere: descriptions, comments, and any HTML field. See also [Work Item Rich Links](#work-item-rich-links) and [Pull Request Rich Links](#pull-request-rich-links) below.
 
 ### Writing Style
 

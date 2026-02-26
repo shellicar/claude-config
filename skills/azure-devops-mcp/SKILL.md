@@ -221,6 +221,12 @@ Use `repo_update_pull_request` with `autoComplete: true` and `mergeStrategy` to 
 
 `wit_work_items_link` supports these link types: `parent`, `child`, `duplicate`, `duplicate of`, `related`, `successor`, `predecessor`, `tested by`, `tests`, `affects`, `affected by`.
 
+### Newlines in String Fields
+
+When passing multi-line text to MCP tools (PR descriptions, work item descriptions), use single `\n` for line breaks. Do NOT use `\n\n` (double newline) — it gets double-escaped to literal `\\n\\n` in the output.
+
+For paragraph breaks in PR descriptions (markdown), use a single `\n` between paragraphs — the markdown renderer handles the spacing. For work item descriptions (HTML), use `<br>` or `<div>` tags for line breaks instead of `\n`.
+
 ### Expand Relations
 
 To see parent/child relationships on a work item, use `expand: "relations"` on `wit_get_work_item`.
