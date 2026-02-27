@@ -82,7 +82,7 @@
       "Edit(~/.claude/hooks)",
       "Edit(~/.claude/settings.json)",
       "Edit(~/.claude/skills/*/scripts)",
-      "Edit(~/.claude/skills/cli-tools)",
+      "Edit(~/.claude/skills/auto-approve-security)",
       "Edit(~/.gitconfig)",
       "Edit(~/.profile)",
       "Edit(~/.zshrc)",
@@ -98,7 +98,7 @@
       "Write(~/.claude/hooks)",
       "Write(~/.claude/settings.json)",
       "Write(~/.claude/skills/*/scripts)",
-      "Write(~/.claude/skills/cli-tools)",
+      "Write(~/.claude/skills/auto-approve-security)",
       "Write(~/.gitconfig)",
       "Write(~/.profile)",
       "Write(~/.zshrc)"
