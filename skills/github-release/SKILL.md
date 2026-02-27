@@ -6,6 +6,8 @@ user-invocable: true
 
 # GitHub Release
 
+**Scope:** Steps and CLI commands for creating a GitHub release to trigger npm publish.
+
 Create a GitHub release for an npm package, triggering the npm-publish workflow.
 
 ## Quick Start

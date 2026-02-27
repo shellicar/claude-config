@@ -5,6 +5,8 @@ description: Determine next version and update CHANGELOG for @shellicar npm pack
 
 # GitHub Version Management
 
+**Scope:** How to determine the next semantic version and update CHANGELOG.md. Release execution lives in github-release.
+
 Determine the next version number and update CHANGELOG.md for a release.
 
 ## Quick Start

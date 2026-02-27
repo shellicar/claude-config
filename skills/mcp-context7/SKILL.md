@@ -6,6 +6,8 @@ user-invocable: true
 
 # Context7 MCP
 
+**Scope:** When and how to use the Context7 MCP server for fetching current library documentation, plus installation and version management.
+
 Fetches current library documentation via the Context7 MCP server. Use this to get up-to-date API references, config patterns, and version information for libraries where your training data may be stale.
 
 GitHub: https://github.com/upstash/context7

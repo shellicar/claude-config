@@ -6,6 +6,8 @@ user-invocable: false
 
 # Eagers Conventions
 
+**Scope:** Git branch, commit, PR, and work item conventions specific to Eagers Automotive projects on Azure DevOps.
+
 Git and PR conventions for Eagers Automotive projects.
 
 ## Detection

@@ -5,6 +5,8 @@ description: Push commits to remote with secret and PII scanning. Use when pushi
 
 # Git Push Workflow
 
+**Scope:** Git CLI commands for pushing, secret scanning gates, and divergence checks. Convention-specific rules live in convention skills.
+
 Push local commits to the remote with mandatory secret and PII scanning.
 
 ## Working Directory

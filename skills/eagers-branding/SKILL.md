@@ -6,6 +6,8 @@ user-invocable: false
 
 # Eagers Branding Guidelines
 
+**Scope:** Brand name spelling, capitalisation, colour palette, logo usage, and tone rules for easyauto123 and sub-brands.
+
 Brand usage rules for easyauto123 and related sub-brands. Source: EA123 Brand Usage Guidelines v1.1 (2024).
 
 ## Brand Name Casing (CRITICAL)

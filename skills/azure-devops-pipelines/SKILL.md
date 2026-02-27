@@ -5,6 +5,8 @@ description: Pipeline runs and configuration in Azure DevOps. Use when queuing/m
 
 # Azure DevOps Pipelines
 
+**Scope:** CLI commands for pipeline runs, YAML trigger configuration, and build validation policies.
+
 Pipeline runs, configuration, triggers, and build validation policies.
 
 ## When Invoked

@@ -6,6 +6,8 @@ user-invocable: false
 
 # Shellicar Conventions
 
+**Scope:** Git branch, commit, PR, and repo configuration conventions for shellicar projects on GitHub.
+
 Git and PR conventions for personal and OSS projects.
 
 ## Detection

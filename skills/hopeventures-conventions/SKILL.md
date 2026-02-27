@@ -6,6 +6,8 @@ user-invocable: false
 
 # Hope Ventures Conventions
 
+**Scope:** Git branch, commit, and PR conventions specific to Hope Ventures projects on Azure DevOps.
+
 Git and PR conventions for Hope Ventures projects.
 
 ## Detection

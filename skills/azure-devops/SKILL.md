@@ -5,6 +5,8 @@ description: Shared Azure DevOps foundation. Auto-detects org/project from git r
 
 # Azure DevOps
 
+**Scope:** Org/project detection from git remotes and the shared REST API wrapper. Sub-skill routing, not sub-skill content.
+
 Shared foundation for all Azure DevOps skills. Provides org/project detection and routing to sub-skills.
 
 ## Org/Project Detection

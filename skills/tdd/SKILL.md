@@ -6,6 +6,8 @@ user-invocable: true
 
 # TDD (Test-Driven Development)
 
+**Scope:** The Red-Green-Refactor cycle, when to write tests first, and the verification checklist. Testing patterns and coding standards live in typescript-standards.
+
 This skill enforces the TDD workflow: Red → Green → Refactor.
 
 ## Core Principle

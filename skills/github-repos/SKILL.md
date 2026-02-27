@@ -6,6 +6,8 @@ user-invocable: true
 
 # GitHub Repository Configuration
 
+**Scope:** gh CLI commands for configuring repository settings, merge options, and branch rulesets. What settings to apply lives in convention skills.
+
 Configure GitHub repo settings and branch rulesets. Convention skills define WHAT settings a repo should have; this skill defines HOW to apply them.
 
 ## Workflow

@@ -6,6 +6,8 @@ user-invocable: false
 
 # Shell Scripting Guidelines
 
+**Scope:** Rules for writing portable, POSIX-compliant shell scripts — shebangs, quoting, error handling, argument parsing, and compatibility.
+
 Write portable shell scripts that work across systems.
 
 ## Quick Reference

@@ -6,6 +6,8 @@ user-invocable: false
 
 # Convention Detection
 
+**Scope:** How to detect the active project convention from git remote URLs and directory paths. Convention rules themselves live in each convention skill.
+
 Detect the project convention and default branch from the current git repository.
 
 ## Script

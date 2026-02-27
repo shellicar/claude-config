@@ -5,6 +5,8 @@ description: PRs, merge workflows, and branch policies in Azure DevOps. Use when
 
 # Azure DevOps Repos
 
+**Scope:** CLI commands for Azure DevOps PRs, auto-complete, work item linking, merge commit messages, and branch policies.
+
 Pull requests, work item linking, and merge workflows. See also `azure-devops-boards` for work item hierarchy and formatting.
 
 ## When Invoked

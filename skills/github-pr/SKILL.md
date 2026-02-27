@@ -6,6 +6,8 @@ allowed-tools: Bash(~/.claude/skills/github-pr/scripts/*)
 
 # GitHub PR Workflow
 
+**Scope:** Steps and CLI commands for creating or updating a GitHub pull request. PR format and conventions live in convention skills.
+
 Create or update a pull request with a detailed summary of changes.
 
 ## Working Directory

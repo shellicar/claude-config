@@ -6,6 +6,8 @@ user-invocable: false
 
 # Secret Remediation: Git History Scrubbing
 
+**Scope:** Git filter-branch commands and steps for scrubbing secrets and PII from commit history. Detection and pattern matching live in secret-scanning.
+
 Rewrite git history to remove secrets and PII that were committed. This skill is invoked after the `secret-scanning` skill detects values in git history that need removal.
 
 ## Prerequisites

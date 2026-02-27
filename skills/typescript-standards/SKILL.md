@@ -6,6 +6,8 @@ user-invocable: false
 
 # TypeScript Coding Guidelines
 
+**Scope:** Coding rules for TypeScript: banned types, naming conventions, temporal types, satisfies usage, re-export rules, and testing patterns.
+
 These instructions apply **only to code you are actively modifying**. Do not fix pre-existing violations in other parts of the file unless explicitly asked.
 
 ## Quick Reference

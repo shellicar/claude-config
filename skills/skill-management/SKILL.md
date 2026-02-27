@@ -6,6 +6,8 @@ user-invocable: false
 
 # Skill Management
 
+**Scope:** How to create, describe, structure, and organise skills in this repository. Skill content itself lives in the individual skills.
+
 Guidelines for creating and maintaining Claude Code skills in this repository.
 
 ## Official Documentation

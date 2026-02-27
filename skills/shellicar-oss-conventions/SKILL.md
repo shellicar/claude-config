@@ -6,6 +6,8 @@ user-invocable: false
 
 # @shellicar OSS Conventions
 
+**Scope:** Git branch, commit, PR, milestone, issue linking, and repo configuration conventions for @shellicar npm packages on GitHub.
+
 Git and PR conventions for published npm packages under the @shellicar scope.
 
 ## Detection

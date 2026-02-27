@@ -5,6 +5,8 @@ description: Perform maintenance release with security fixes and dependency upda
 
 # Maintenance Release Workflow
 
+**Scope:** Steps for gathering CVE and dependency data, proposing an update plan, executing updates, and verifying the result. Version management lives in github-version.
+
 Perform a maintenance release by gathering security and dependency information, proposing a recommended plan, and executing after user refinement.
 
 ## Quick Start

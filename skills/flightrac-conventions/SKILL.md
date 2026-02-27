@@ -6,6 +6,8 @@ user-invocable: false
 
 # Flightrac Conventions
 
+**Scope:** Git branch, commit, and PR conventions specific to Flightrac projects on Azure DevOps.
+
 Git and PR conventions for Flightrac projects.
 
 ## Detection

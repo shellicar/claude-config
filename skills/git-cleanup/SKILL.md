@@ -5,6 +5,8 @@ description: Analyze and clean up local git branches. Use when branches have acc
 
 # Git Cleanup: Local Branch Analysis and Cleanup
 
+**Scope:** Techniques and git commands for identifying and safely deleting local branches, especially after squash merges.
+
 Techniques for analyzing and cleaning up local git branches, especially with squash merges.
 
 ## Quick Start

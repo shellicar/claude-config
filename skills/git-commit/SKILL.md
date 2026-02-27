@@ -5,6 +5,8 @@ description: Create a git commit with a concise message. Use when committing cha
 
 # Git Commit Workflow
 
+**Scope:** Git CLI commands for committing, their required sequence, and why each step is not skippable. Convention-specific rules live in convention skills.
+
 Create a commit from staged changes with a concise, single-line message.
 
 ## Why Steps Are Not Skippable

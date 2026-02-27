@@ -6,6 +6,8 @@ user-invocable: false
 
 # Shellicar Config Conventions
 
+**Scope:** Git conventions for personal config repos: direct commits to main, no PRs, no branch protection.
+
 Git conventions for personal configuration repositories.
 
 ## Detection

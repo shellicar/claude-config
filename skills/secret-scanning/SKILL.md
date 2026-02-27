@@ -5,6 +5,8 @@ description: Secret and PII awareness for code generation, committing, and pushi
 
 # Secret & PII Scanning Awareness
 
+**Scope:** Pattern tables for detecting secrets and PII, safe placeholder values, and the mandatory disposition process for evaluating matches.
+
 Never generate code, config, tests, or examples containing real or realistic-looking secrets, credentials, or PII. Use obviously fake values instead.
 
 This skill MUST be loaded for:
