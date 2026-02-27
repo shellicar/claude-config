@@ -26,7 +26,7 @@ WHERE [System.IterationPath] UNDER '{iteration}'
 ORDER BY [System.WorkItemType], [System.Id]
 ```
 
-Then batch-fetch with `wit_get_work_items_batch_by_ids` including fields:
+Then batch-fetch with `az boards work-item show --id <ID>` (or loop over IDs) including fields:
 - `System.Id`, `System.Title`, `System.WorkItemType`, `System.State`
 - `System.Description`, `System.AreaPath`, `System.IterationPath`, `System.Parent`
 - `Microsoft.VSTS.TCM.ReproSteps` (for Bugs)
@@ -61,7 +61,7 @@ Go through items one-by-one rather than in tables — tables don't render well f
 ### 5. Apply Fixes
 
 After the Supreme Commander approves each fix:
-- Update via `wit_update_work_item` or `wit_update_work_items_batch`
+- Update via `az boards work-item update` (or batch update scripts for bulk changes)
 - Write descriptions back to the Supreme Commander for eyeballing before moving on
 - Use batch updates where multiple items need the same type of fix (e.g. area path corrections)
 
@@ -92,6 +92,6 @@ Always use rich links in descriptions, never plain `#123`:
 
 - `System.Description` is not rendered for Bug work items — use `Microsoft.VSTS.TCM.ReproSteps`
 - `System.Description` is a long-text field — cannot query `= ''` or check length in WIQL
-- `System.Parent` field on `wit_create_work_item` doesn't reliably create hierarchy links — use `wit_work_items_link` separately
-- When using MCP tools, `\n` is fine for line breaks but `\n\n` gets double-escaped — use `<br>` or `<div>` for HTML descriptions
+- `System.Parent` field on `az boards work-item create` doesn't reliably create hierarchy links — use `az boards work-item relation add` separately
+- When using `az rest` for HTML descriptions, use `<br>` or `<div>` for line breaks
 - PR/task titles sometimes drift from actual scope during implementation — check titles match what was done, not what was planned

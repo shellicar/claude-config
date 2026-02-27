@@ -38,7 +38,9 @@ Always `cd` to the project directory first, then use bare `git` commands (e.g., 
     ```
 
     **Azure DevOps:**
-    Use the `repo_list_pull_requests_by_repo_or_project` MCP tool (or `az repos pr list`) filtered by source branch and completed status.
+    ```bash
+    az repos pr list --source-branch <branch-name> --status completed --project <Project> -o json
+    ```
 
     If a merged PR exists for this branch, **STOP** — inform the Supreme Commander this branch was already merged. They need to pull and create a new branch for further work.
 

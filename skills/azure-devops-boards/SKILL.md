@@ -22,7 +22,44 @@ Ask what they need help with if not clear from context.
 
 ## Work Items
 
-For API operations (get, create, update, link, query), see `azure-devops-mcp` skill. Key tools: `wit_get_work_item`, `wit_create_work_item`, `wit_update_work_item`, `wit_work_items_link`, `wit_get_query_results_by_id`.
+```bash
+# Show work item
+az boards work-item show --id <ID>
+
+# Query recent work items
+az boards query --wiql "SELECT [System.Id], [System.Title] FROM WorkItems WHERE [System.CreatedDate] >= @Today - 7 ORDER BY [System.Id] DESC" -o table
+
+# Query children of a work item
+az boards query --wiql "SELECT [System.Id], [System.Title], [System.WorkItemType] FROM WorkItems WHERE [System.Parent] = <PARENT_ID>"
+
+# Create work item (--project is REQUIRED for create)
+az boards work-item create --type "Task" --title "Title" --project "<Project>" --area "<Area>" --iteration "<Iteration>"
+
+# Update work item fields (NO --project flag - work item IDs are globally unique per org)
+az boards work-item update --id <ID> --fields "System.IterationPath=<Iteration>"
+
+# Update work item title
+az boards work-item update --id <ID> --title "New Title"
+
+# Add parent relationship
+az boards work-item relation add --id <ID> --relation-type "parent" --target-id <PARENT_ID>
+
+# Remove parent relationship
+az boards work-item relation remove --id <ID> --relation-type "parent" --target-id <PARENT_ID> -y
+
+# Add comment (use az rest — no native CLI command for comments)
+az rest --method POST \
+  --uri "https://dev.azure.com/{org}/{project}/_apis/wit/workItems/{id}/comments?api-version=7.1-preview.4" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --headers "Content-Type=application/json" \
+  --body '{"text": "<div>Comment text here.</div>"}'
+```
+
+### CLI Gotchas
+
+- **`az boards work-item update`**: Does NOT accept `--project`. Work item IDs are globally unique within an org, so only `--org` and `--id` are needed.
+- **`--fields "System.Parent=X"` does NOT work for reparenting**: Setting `System.Parent` via `--fields` silently does nothing. You MUST use `az boards work-item relation remove` (old parent) then `az boards work-item relation add` (new parent) to change parent relationships.
+- **No `az boards work-item list`**: This command does not exist. Use `az boards query` with WIQL instead.
 
 ### Type Changes
 
@@ -32,14 +69,22 @@ When changing work item type (e.g. PBI → Feature), state fields differ between
 
 ### WIQL Notes
 
-MCP can execute saved queries (`wit_get_query_results_by_id`) but cannot run ad-hoc WIQL. For custom queries, use `az boards query --wiql` (CLI fallback).
-
-- **`ORDER BY` restrictions**: `[System.Parent]` cannot be used in ORDER BY — sort by `[System.Id]` or `[System.WorkItemType]` instead.
+- **`ORDER BY` restrictions**: `[System.Parent]` cannot be used in ORDER BY — it throws "The specified field cannot be sorted by". Sort by `[System.Id]` or `[System.WorkItemType]` instead, then process results client-side.
 - **Path values**: Do NOT use a leading backslash in WIQL. Use `<Project>\Iteration\Path`, not `\<Project>\Iteration\Path`.
 
 ### Batch Updates
 
-MCP supports `wit_update_work_items_batch` for bulk field updates. For complex batch operations (reparenting, conditional logic), write a shell script to `/tmp/` and execute it (see `cli-tools` skill).
+When updating many work items in a loop, write a shell script to `/tmp/` and execute it (see `cli-tools` skill for why `&&` and `;` are blocked):
+
+```bash
+#!/bin/bash
+set -e
+for id in 100 101 102 103
+do
+  az boards work-item update --id "$id" --iteration 'Project\Iteration\Path' --org https://dev.azure.com/myorg --output none
+  echo "Updated $id"
+done
+```
 
 ## Work Item Hierarchy
 
@@ -274,9 +319,20 @@ Track dependencies between work items using link types:
 - **Predecessor / Successor**: Time-based dependencies (B can't start until A finishes)
 - **Related**: General association between related work items across teams
 
-Use `wit_work_items_link` from `azure-devops-mcp` to add links. Supported link types: `parent`, `child`, `duplicate`, `duplicate of`, `related`, `successor`, `predecessor`, `tested by`, `tests`, `affects`, `affected by`.
+```bash
+# Add predecessor link (target must finish before this item can start)
+az boards work-item relation add --id <ID> --relation-type "Predecessor" --target-id <TARGET_ID>
 
-Dependency lines are visible on [delivery plans](https://learn.microsoft.com/en-us/azure/devops/boards/plans/track-dependencies?view=azure-devops). Use `wit_get_work_item` with `expand: "relations"` to find cross-team dependencies.
+# Add successor link
+az boards work-item relation add --id <ID> --relation-type "Successor" --target-id <TARGET_ID>
+
+# Add related link
+az boards work-item relation add --id <ID> --relation-type "Related" --target-id <TARGET_ID>
+```
+
+Supported link types: `parent`, `child`, `duplicate`, `duplicate of`, `related`, `successor`, `predecessor`, `tested by`, `tests`, `affects`, `affected by`.
+
+Dependency lines are visible on [delivery plans](https://learn.microsoft.com/en-us/azure/devops/boards/plans/track-dependencies?view=azure-devops). You can also query for linked items to find cross-team dependencies.
 
 ### Node Name Column
 
@@ -284,9 +340,13 @@ Add the **Node Name** column to backlog views to see the leaf node of the area p
 
 ## Iterations & Areas
 
-**Listing**: Use MCP `work_list_iterations` (all project iterations) or `work_list_team_iterations` (team-assigned iterations). See `azure-devops-mcp` skill.
+```bash
+# List project iterations
+az boards iteration project list --project "<Project>" --depth 3 -o table
 
-**CRUD (create/delete)**: MCP does not cover area/iteration path CRUD. Use CLI:
+# List project area paths
+az boards area project list --project "<Project>" --depth 2 -o table
+```
 
 ```bash
 # Create iteration (--path is the PARENT path, --name is the new child)
@@ -602,21 +662,27 @@ Walk through the backlog with the user:
 - Present the current order and ask if anything needs to move
 
 #### 4. Apply Changes
-Use MCP for individual or batch updates (see `azure-devops-mcp`):
-- Reparenting: `wit_work_items_link` (add parent/child) or `wit_work_item_unlink` (remove)
-- Field updates (area, iteration, state, dates): `wit_update_work_item` or `wit_update_work_items_batch`
-- Clearing date fields: Set to empty string via `wit_update_work_item`
+Use batch update scripts for bulk changes (write to `/tmp/` and execute — see `cli-tools` skill):
+- Reparenting: `az boards work-item relation add/remove`
+- Area/iteration changes: `az boards work-item update --area/--iteration`
+- State changes: `az boards work-item update --state`
+- Clearing date fields: `az boards work-item update --fields "Microsoft.VSTS.Scheduling.StartDate="`
 
-For complex batch operations (conditional logic, loops), write a shell script to `/tmp/` using CLI commands (see `cli-tools` skill).
-
-**Note**: Backlog priority (drag-and-drop ordering) can only be changed via the UI or the undocumented Settings API. Use iteration assignment and state to influence effective priority.
+**Note**: Backlog priority (drag-and-drop ordering) can only be changed via the UI or the undocumented Settings API. Use iteration assignment and state to influence effective priority when CLI-only.
 
 #### 5. Verify
 Re-query the backlog after changes and present the updated view. Compare with the UI if the user has it open.
 
 ### Clearing Fields
 
-To unset/clear a field value, set it to an empty string via `wit_update_work_item` (e.g., set `Microsoft.VSTS.Scheduling.StartDate` to `""`).
+To unset/clear a field value, set it to an empty string:
+```bash
+# Clear start date
+az boards work-item update --id <ID> --fields "Microsoft.VSTS.Scheduling.StartDate="
+
+# Clear target date
+az boards work-item update --id <ID> --fields "Microsoft.VSTS.Scheduling.TargetDate="
+```
 
 ## Move Work Item Between Projects
 
@@ -720,10 +786,14 @@ When an equivalent work item already exists in the target project:
 
 ### Comment Format for Cross-Project Links
 
-Use `wit_add_work_item_comment` (see `azure-devops-mcp`) with HTML format and `data-vss-mention` attribute for proper rendering:
+Use HTML format with `data-vss-mention` attribute for proper rendering:
 
-```html
-<div>Continued in <a href="https://dev.azure.com/{org}/{targetProject}/_workitems/edit/{targetId}/" data-vss-mention="version:1.0">#{targetId}</a> ({Title}) in {targetProject} project as part of work item migration.</div>
+```bash
+az rest --method POST \
+  --uri "https://dev.azure.com/{org}/{project}/_apis/wit/workItems/{id}/comments?api-version=7.1-preview.4" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --headers "Content-Type=application/json" \
+  --body '{"text": "<div>Continued in <a href=\"https://dev.azure.com/{org}/{targetProject}/_workitems/edit/{targetId}/\" data-vss-mention=\"version:1.0\">#{targetId}</a> ({Title}) in {targetProject} project as part of work item migration.</div>"}'
 ```
 
 **Note**: Plain text `#1234` does NOT auto-link for cross-project references. Must use full HTML anchor tag.

@@ -19,7 +19,22 @@ Ask what they need help with if not clear from context.
 
 ## Pipeline Runs
 
-For API operations (list, run, get status, get logs), see `azure-devops-mcp` skill. Key tools: `pipelines_run_pipeline`, `pipelines_get_run`, `pipelines_list_runs`, `pipelines_get_builds`, `pipelines_get_build_status`, `pipelines_get_build_log`.
+```bash
+# List pipeline runs (always use --query-order QueueTimeDesc)
+az pipelines runs list --pipeline-ids <ID> --query-order QueueTimeDesc -o table
+
+# Show pipeline run details
+az pipelines runs show --id <RUN_ID>
+
+# Queue a pipeline run
+az pipelines run --id <PIPELINE_ID>
+
+# List builds
+az pipelines build list --project <Project> -o table
+
+# Show build details
+az pipelines build show --id <BUILD_ID>
+```
 
 **CRITICAL**: When listing pipeline runs via CLI fallback, always use `--query-order QueueTimeDesc`. Without this flag, the API may return cached/stale results and miss recently queued or in-progress runs.
 
@@ -29,7 +44,13 @@ Multi-stage pipelines (e.g., with approval gates) show as "inProgress" until ALL
 
 ## Pipeline Configuration
 
-Use MCP `pipelines_get_build_definitions` to list pipelines and their YAML source files (see `azure-devops-mcp`).
+```bash
+# List pipeline definitions
+az pipelines list --project <Project> -o table
+
+# Show pipeline definition details
+az pipelines show --id <PIPELINE_ID> --project <Project> -o json
+```
 
 ## Pipeline Triggers vs Build Validation Policies
 

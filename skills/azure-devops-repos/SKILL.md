@@ -19,25 +19,44 @@ Ask what they need help with if not clear from context.
 
 ## Pull Requests
 
-For API operations (list, create, update, review, link work items), see `azure-devops-mcp` skill. Key tools: `repo_create_pull_request`, `repo_update_pull_request`, `repo_get_pull_request_by_id`, `repo_list_pull_requests_by_repo_or_project`, `wit_link_work_item_to_pull_request`.
+```bash
+# List active PRs
+az repos pr list --status active --repository <Repo> --project <Project> -o table
 
-**Note**: Most repo/PR tools require `repositoryId` (a GUID). Get it first with `repo_get_repo_by_name_or_id`. PR tools expect full ref names: `refs/heads/main`, not just `main`.
+# Show PR details
+az repos pr show --id <ID> -o json | jq '{title: .title, description: .description}'
+
+# Update PR title
+az repos pr update --id <ID> --title "New title"
+
+# Update PR description
+az repos pr update --id <ID> --description "$(cat description.md)"
+
+# Create PR
+az repos pr create --title "Title" --description "$(cat description.md)" --source-branch <branch> --target-branch main
+
+# Set auto-complete (always do this after creating PR)
+az repos pr update --id <ID> --auto-complete true
+
+# Link work items to PR (via work item feature, not description)
+az repos pr work-item add --id <PR_ID> --work-items <WI_ID1> <WI_ID2>
+```
 
 ## Linking Work Items to PRs
 
-- **PBI**: Link in the PR description using `#1234` syntax, or use `wit_link_work_item_to_pull_request`
-- **Tasks**: Use `wit_link_work_item_to_pull_request` (see `azure-devops-mcp`)
+- **PBI**: Link in the PR description using `#1234` syntax
+- **Tasks**: Link via the work item feature using `az repos pr work-item add`
 
 This keeps the description clean while still associating all related work.
 
 ## PR Completion Workflow
 
-Follow this exact workflow when completing a PR:
+Follow this exact workflow when completing a PR via CLI:
 
-1. **Create PR** with PBI linked in description (use `repo_create_pull_request`)
-2. **Link Task** via `wit_link_work_item_to_pull_request`
-3. **Set auto-complete**: Use `repo_update_pull_request` with `autoComplete: true` and `mergeStrategy: "Squash"`
-4. **Set merge commit message**: MCP does not support setting merge commit messages. Use the script:
+1. **Create PR** with PBI linked in description
+2. **Link Task** via `az repos pr work-item add --id <PR_ID> --work-items <TASK_ID>`
+3. **Preview merge message**: `pr-merge-message.sh --org <org> --id <PR_ID> --show`
+4. **Set auto-complete with merge message**:
    ```bash
    pr-merge-message.sh --org <org> --id <PR_ID> --set-auto-complete
    ```
@@ -100,11 +119,11 @@ Work item links (`#1234`) render with full metadata (title, status badge). For c
 
 ## Work Item Linking
 
-Work items are automatically linked when referenced in PR description with `#1234` syntax. For programmatic linking, use `wit_link_work_item_to_pull_request` or `wit_add_artifact_link` (see `azure-devops-mcp`).
+Work items are automatically linked when referenced in PR description with `#1234` syntax.
 
 ## Branch Policies
 
-MCP does not cover branch policy CRUD. Use CLI:
+Query all branch policies for a project:
 
 ```bash
 az repos policy list --project <Project> --org https://dev.azure.com/<org> -o json
@@ -156,10 +175,10 @@ az repos policy required-reviewer create --project <Project> --org https://dev.a
 
 ### Querying Repo ID
 
-Policies require `--repository-id`. Use MCP `repo_get_repo_by_name_or_id` or CLI:
+Policies require `--repository-id`. To find it:
 
 ```bash
-az repos show --repository <RepoName> --project <Project> --org https://dev.azure.com/<org> -o json
+az repos show --repository <RepoName> --project <Project> --org https://dev.azure.com/<org> -o json --query id
 ```
 
 ### Branch Scoping

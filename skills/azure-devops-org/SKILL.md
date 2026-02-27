@@ -11,9 +11,15 @@ For org/project detection and the common resource ID, see `azure-devops`.
 
 ## Teams
 
-**Listing**: Use MCP `core_list_project_teams` for teams, `work_list_team_iterations` for iteration assignments (see `azure-devops-mcp`).
+```bash
+# List teams in a project
+az devops team list --project <Project> -o table
 
-**Team area assignments and team settings** (backlog visibility, bugs behaviour, working days): MCP does not cover these. Use CLI:
+# List team iterations
+az boards iteration team list --team <Team> --project <Project> -o table
+```
+
+**Team area assignments and team settings** (backlog visibility, bugs behaviour, working days):
 
 ```bash
 # Team area path assignments
