@@ -1,6 +1,6 @@
 ---
 name: github-milestone
-description: Manage GitHub milestones for version tracking. Use when creating, finding, or closing milestones, or when associating PRs with milestones.
+description: "Manage GitHub milestones for version tracking.\nTRIGGER when: creating PRs, attaching milestones to PRs, creating/finding/closing milestones, or any workflow involving version tracking.\nDO NOT TRIGGER when: general GitHub operations that don't involve milestones."
 ---
 
 # GitHub Milestones

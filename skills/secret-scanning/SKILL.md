@@ -1,6 +1,6 @@
 ---
 name: secret-scanning
-description: Secret and PII awareness for code generation, committing, and pushing. MUST be applied when writing code, config, tests, or examples. MUST be applied when committing or pushing code to scan staged/changed files for hardcoded credentials and real PII.
+description: "Secret and PII awareness for code generation, committing, and pushing.\nTRIGGER when: writing code/config/tests/examples, committing changes, pushing code, or scanning for hardcoded credentials and real PII.\nDO NOT TRIGGER when: reading files, exploring code, or non-code-generation tasks."
 ---
 
 # Secret & PII Scanning Awareness

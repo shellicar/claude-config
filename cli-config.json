@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/cli-config.schema.json",
+  "model": "claude-opus-4-6",
+  "maxTurns": 100,
+  "permissionTimeoutMs": 30000,
+  "extendedPermissionTimeoutMs": 120000,
+  "drowningThreshold": 15,
+  "autoApproveEdits": true,
+  "autoApproveReads": true
+}

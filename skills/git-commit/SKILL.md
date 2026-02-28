@@ -1,6 +1,6 @@
 ---
 name: git-commit
-description: Create a git commit with a concise message. Use when committing changes, asked to commit, or after completing a task.
+description: "Create a git commit with a concise message.\nTRIGGER when: committing changes, asked to commit, after completing a task, or staging files for commit.\nDO NOT TRIGGER when: reading git status, exploring history, or non-commit git operations."
 ---
 
 # Git Commit Workflow

@@ -1,6 +1,6 @@
 ---
 name: writing-style
-description: Writing style for PRs, commits, work items, and titles. Loaded by PR workflows, commit workflows, and convention skills. Use when writing or reviewing any user-facing text (PR descriptions, commit messages, work item titles, task titles).
+description: "Writing style for PRs, commits, work items, and titles.\nTRIGGER when: writing commit messages, PR titles, PR descriptions, work item titles, work item descriptions, or any user-facing text.\nDO NOT TRIGGER when: writing code, reading files, researching, or non-text-writing tasks."
 user-invocable: false
 ---
 

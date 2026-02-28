@@ -7,14 +7,16 @@
   "permissions": {
     "allow": [
       "Bash(./ecosystem/scripts/check-wip.sh:*)",
-      "Bash(~/repos/@shellicar/ecosystem/scripts/*.sh)",
-      "Bash(~/repos/@shellicar/ecosystem/scripts/ensure-labels.sh *)",
       "Bash(~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh *)",
       "Bash(~/.claude/skills/azure-devops/scripts/ado-rest.sh --method GET *)",
       "Bash(~/.claude/skills/detect-convention/scripts/*.sh)",
       "Bash(~/.claude/skills/git-commit/scripts/*.sh *)",
+      "Bash(~/.claude/skills/git-commit/scripts/*.sh)",
       "Bash(~/.claude/skills/git-push/scripts/*.sh *)",
+      "Bash(~/.claude/skills/git-push/scripts/*.sh)",
       "Bash(~/.claude/skills/github-pr/scripts/*.sh)",
+      "Bash(~/repos/@shellicar/ecosystem/scripts/*.sh)",
+      "Bash(~/repos/@shellicar/ecosystem/scripts/*.sh *)",
       "Bash(az --version:*)",
       "Bash(az * --help *)",
       "Bash(az * --help)",

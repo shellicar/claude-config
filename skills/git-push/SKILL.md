@@ -1,6 +1,6 @@
 ---
 name: git-push
-description: Push commits to remote with secret and PII scanning. Use when pushing code, after committing, or before creating a PR.
+description: "Push commits to remote with secret and PII scanning.\nTRIGGER when: pushing code, after committing, before creating a PR, or asked to push.\nDO NOT TRIGGER when: reading git status, exploring history, or non-push git operations."
 ---
 
 # Git Push Workflow

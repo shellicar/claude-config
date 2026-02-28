@@ -1,6 +1,6 @@
 ---
 name: github-pr
-description: Create or update a GitHub pull request with a summary of changes. Use when creating PRs, pushing for review, or asked to open a PR on GitHub.
+description: "Create or update a GitHub pull request with a summary of changes.\nTRIGGER when: creating PRs, updating PRs, pushing for review, or asked to open a PR on GitHub.\nDO NOT TRIGGER when: reading PR status, exploring PR history, or non-PR git operations."
 allowed-tools: Bash(~/.claude/skills/github-pr/scripts/*)
 ---
 
@@ -93,18 +93,33 @@ See `writing-style` skill for the full style guide. Key points:
 - Short phrases, not full sentences
 - If the title says it all, an empty body is fine
 
-### 6. Create or Update PR
+### 6. Resolve Milestone (GitHub)
+
+You MUST load the `github-milestone` skill and resolve the milestone BEFORE creating the PR. The milestone is a required parameter for `gh pr create`.
+
+Follow the milestone skill's workflow:
+1. Check for open milestones
+2. If one exists, use it
+3. If none exists, ask the user which to create
+
+### 7. Create or Update PR
 
 Pass the body directly via `--body` with a quoted string. Do NOT use temp files, `--body-file`, HEREDOCs, or `$(cat ...)` substitution.
 
-**GitHub** (via convention):
+**GitHub** (create):
 ```bash
-gh pr create --title "Title" --body "Description" --assignee @me
-# or
-gh pr edit --title "Title" --body "Description"
+gh pr create --title "Title" --body "Description" --assignee @me --milestone "1.3" --label dependencies
 ```
 
-Always include `--assignee @me` when creating a PR.
+Every `gh pr create` MUST include:
+- `--assignee @me`
+- `--milestone "<milestone>"` (resolved in step 6)
+- `--label <label>` (when applicable, e.g. `dependencies` for maintenance releases)
+
+**GitHub** (update):
+```bash
+gh pr edit --title "Title" --body "Description"
+```
 
 After creating a PR, **always link the PR URL** back to the user so they can review it.
 
@@ -114,15 +129,6 @@ az repos pr create --title "Title" --description "Description"
 # or
 az repos pr update --id ID --title "Title" --description "Description"
 ```
-
-## Milestones (GitHub)
-
-Use the `github-milestone` skill for milestone format, creation, and management.
-
-If a version is known, derive the milestone and attach it to the PR. If no version is known, use `AskUserQuestion`:
-
-- "Proceed without milestone" - Version management later
-- "Run github-version first" - Determine the version before creating the PR
 
 ## Auto-Merge (GitHub)
 

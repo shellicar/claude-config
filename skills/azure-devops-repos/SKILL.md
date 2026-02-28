@@ -21,33 +21,68 @@ Ask what they need help with if not clear from context.
 
 ## Pull Requests
 
+All PR operations use `az rest` (via `ado-rest.sh`) instead of `az repos`. The `az devops` extension has unreliable authentication — `az rest` with `--resource` uses the standard `az login` AAD token directly.
+
 ```bash
+ADO_REST=~/.claude/skills/azure-devops/scripts/ado-rest.sh
+BASE="https://dev.azure.com/{org}/{project}/_apis/git/repositories/{repo}"
+
 # List active PRs
-az repos pr list --status active --repository <Repo> --project <Project> -o table
+$ADO_REST --method GET \
+  --path "$BASE/pullrequests" \
+  --param 'searchCriteria.status=active' \
+  --param 'api-version=7.1'
 
 # Show PR details
-az repos pr show --id <ID> -o json | jq '{title: .title, description: .description}'
-
-# Update PR title
-az repos pr update --id <ID> --title "New title"
-
-# Update PR description
-az repos pr update --id <ID> --description "$(cat description.md)"
+$ADO_REST --method GET \
+  --path "$BASE/pullrequests/{id}" \
+  --param 'api-version=7.1'
 
 # Create PR
-az repos pr create --title "Title" --description "$(cat description.md)" --source-branch <branch> --target-branch main
+az rest --method POST \
+  --url "$BASE/pullrequests?api-version=7.1" \
+  --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+  --body '{
+    "sourceRefName": "refs/heads/<branch>",
+    "targetRefName": "refs/heads/main",
+    "title": "Title",
+    "description": "Description"
+  }'
 
-# Set auto-complete (always do this after creating PR)
-az repos pr update --id <ID> --auto-complete true
+# Update PR (title, description, auto-complete, merge options)
+az rest --method PATCH \
+  --url "$BASE/pullrequests/{id}?api-version=7.1" \
+  --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+  --body '{
+    "autoCompleteSetBy": {"id": "<user-id>"},
+    "completionOptions": {
+      "mergeStrategy": "squash",
+      "deleteSourceBranch": true,
+      "transitionWorkItems": true,
+      "mergeCommitMessage": "Merged PR {id}: {title}\n\n{description}"
+    }
+  }'
 
-# Link work items to PR (via work item feature, not description)
-az repos pr work-item add --id <PR_ID> --work-items <WI_ID1> <WI_ID2>
+# Link work items to PR
+az rest --method PATCH \
+  --url "https://dev.azure.com/{org}/{project}/_apis/wit/workitems/{wi-id}?api-version=7.1" \
+  --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+  --headers 'Content-Type=application/json-patch+json' \
+  --body '[{
+    "op": "add",
+    "path": "/relations/-",
+    "value": {
+      "rel": "ArtifactLink",
+      "url": "vstfs:///Git/PullRequestId/{project-id}%2F{repo-id}%2F{pr-id}",
+      "attributes": {"name": "Pull Request"}
+    }
+  }]'
 ```
 
 ## Linking Work Items to PRs
 
-- **PBI**: Link in the PR description using `#1234` syntax
-- **Tasks**: Link via the work item feature using `az repos pr work-item add`
+- **PBI**: Link in the PR description using `#1234` syntax (auto-linked by Azure DevOps)
+- **Tasks**: Link via REST API (see work item linking example above)
 
 This keeps the description clean while still associating all related work.
 
@@ -128,7 +163,9 @@ Work items are automatically linked when referenced in PR description with `#123
 Query all branch policies for a project:
 
 ```bash
-az repos policy list --project <Project> --org https://dev.azure.com/<org> -o json
+$ADO_REST --method GET \
+  --path 'https://dev.azure.com/{org}/{project}/_apis/policy/configurations' \
+  --param 'api-version=7.1'
 ```
 
 Common policy types:
@@ -142,49 +179,45 @@ For **build validation policies**, see `azure-devops-pipelines`.
 
 ### Managing Policies
 
+Use the REST API to create and update policies. Each policy type has a specific `type.id` — query existing policies first to find the type IDs for your org.
+
 ```bash
-# Minimum reviewer count
-az repos policy approver-count create --project <Project> --org https://dev.azure.com/<org> \
-  --branch main --repository-id <RepoId> \
-  --minimum-approver-count 2 --creator-vote-counts false --allow-downvotes false \
-  --reset-on-source-push true --blocking true --enabled true
+# Create a policy configuration
+az rest --method POST \
+  --url "https://dev.azure.com/{org}/{project}/_apis/policy/configurations?api-version=7.1" \
+  --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+  --body '{
+    "isEnabled": true,
+    "isBlocking": true,
+    "type": {"id": "<policy-type-id>"},
+    "settings": {
+      "minimumApproverCount": 1,
+      "creatorVoteCounts": false,
+      "scope": [{
+        "repositoryId": "<repo-id>",
+        "refName": "refs/heads/main",
+        "matchKind": "exact"
+      }]
+    }
+  }'
 
-az repos policy approver-count update --id <PolicyId> --project <Project> --org https://dev.azure.com/<org> \
-  --minimum-approver-count 1
-
-# Merge strategy
-az repos policy merge-strategy create --project <Project> --org https://dev.azure.com/<org> \
-  --branch main --repository-id <RepoId> \
-  --allow-squash true --allow-no-fast-forward false --allow-rebase false --allow-rebase-merge false \
-  --blocking true --enabled true
-
-# Work item linking
-az repos policy work-item-linking create --project <Project> --org https://dev.azure.com/<org> \
-  --branch main --repository-id <RepoId> \
-  --blocking true --enabled true
-
-# Comment requirements
-az repos policy comment-required create --project <Project> --org https://dev.azure.com/<org> \
-  --branch main --repository-id <RepoId> \
-  --blocking true --enabled true
-
-# Required reviewers
-az repos policy required-reviewer create --project <Project> --org https://dev.azure.com/<org> \
-  --branch main --repository-id <RepoId> \
-  --required-reviewer-ids <UserId1> <UserId2> --message "Requires approval from team leads" \
-  --blocking true --enabled true
+# Update a policy
+az rest --method PUT \
+  --url "https://dev.azure.com/{org}/{project}/_apis/policy/configurations/{policy-id}?api-version=7.1" \
+  --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+  --body '{ ... }'
 ```
 
 ### Querying Repo ID
 
-Policies require `--repository-id`. To find it:
+Policies require `repositoryId`. To find it:
 
 ```bash
-az repos show --repository <RepoName> --project <Project> --org https://dev.azure.com/<org> -o json --query id
+$ADO_REST --method GET \
+  --path 'https://dev.azure.com/{org}/{project}/_apis/git/repositories/{repo}' \
+  --param 'api-version=7.1' | jq '.id'
 ```
 
 ### Branch Scoping
 
-All policy commands accept `--branch` to scope to a specific branch. Use the short name (e.g., `main`), not the full ref (`refs/heads/main`).
-
-To apply a policy to all branches, omit `--branch` and `--repository-id`.
+Policies scope to branches via the `settings.scope` array. Use the full ref (`refs/heads/main`).
