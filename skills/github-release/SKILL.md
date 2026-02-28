@@ -33,76 +33,53 @@ This skill can be invoked:
 2. **Check working directory** - If in a git repo with package.json, use that
 3. **Ask user** - If ambiguous (parent workspace, no context), ask which repo to release
 
-## Pre-conditions (Discovery)
+## Progress Tracking
 
-### 1. Determine Repository
+Create TODOs at the start of this workflow. The post-release steps (monitor workflow, verify npm, close milestone) are easy to lose track of if the conversation goes on a tangent — TODOs persist and serve as reminders.
 
-**From context**: Check if a repo was discussed in the conversation (e.g., "build-clean v1.2.1")
-
-**From working directory** (if no context):
-
-```bash
-# Check if in a git repo
-git rev-parse --git-dir 2>/dev/null
-
-# Get repo name from git remote
-git remote get-url origin | sed 's/.*github.com[:/]\(.*\)\.git/\1/' | cut -d'/' -f2
+```
+- Gather pre-release state and verify preconditions
+- Create release
+- Review release notes
+- Verify npm publish succeeded
+- Close milestone
 ```
 
-**If in parent workspace** (e.g., `/home/stephen/repos/@shellicar`):
+## Steps
 
-Use `AskUserQuestion` to ask which repo to release, listing available repos.
-
-### 2. Detect Convention
+### 1. Detect Convention
 
 Use the `detect-convention` skill. Must be a GitHub repo (shellicar or shellicar-oss convention).
 
-### 3. Get Version from package.json
+### 2. Gather pre-release state
+
+Run the gather script to check all preconditions in one call:
 
 ```bash
-# Monorepo (packages/*/package.json)
-jq -r '.version' packages/*/package.json 2>/dev/null | head -1
-
-# Single package (fallback)
-jq -r '.version' package.json 2>/dev/null
+~/.claude/skills/github-release/scripts/github-release-info.sh
 ```
 
-### 4. Verify Pre-conditions
+The script outputs structured sections: `REPO`, `BRANCH`, `WORKING_TREE`, `VERSION`, `CHANGELOG`, `MILESTONE`, `EXISTING`.
 
-Before proceeding, verify:
+### 3. Analyse the gathered state
 
-- [ ] On `main` branch
-- [ ] Working directory clean (no uncommitted changes)
-- [ ] CHANGELOG.md contains entry for this version
-- [ ] package.json version matches CHANGELOG version
-- [ ] Milestone exists for this version
+From the script output, check the following — stop and inform the Supreme Commander if any fail:
 
-```bash
-# Check milestone exists
-gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title == "{VERSION}")'
-```
+- **Branch**: Must be on `main`
+- **Working tree**: Must be clean
+- **Version**: Must be found in package.json
+- **CHANGELOG**: Must contain an entry for the version
+- **Milestone**: Should exist for the version (warn if missing, don't block)
+- **Existing release**: If a release already exists, STOP — inform the Supreme Commander
 
-If any fail, inform user what's missing.
-
-## Main Steps
-
-### 1. Check for Existing Release
-
-```bash
-# Note: @shellicar repos use VERSION without 'v' prefix
-gh release view "${VERSION}" 2>/dev/null
-```
-
-If release exists, inform user and stop (or offer to view it).
-
-### 2. Confirm with User
+### 4. Confirm with user
 
 Use `AskUserQuestion` to confirm release creation:
 
 - "Create release" - Proceed with release
 - "Cancel" - Do not create release
 
-### 3. Create Release with Auto-Generated Notes
+### 5. Create release
 
 ```bash
 # @shellicar convention: no 'v' prefix
@@ -111,10 +88,9 @@ gh release create "${VERSION}" \
   --generate-notes
 ```
 
-### 4. Review and Evaluate Release Notes
+### 6. Review and evaluate release notes
 
 ```bash
-# Get the auto-generated release notes
 gh release view "${VERSION}" --json body --jq '.body'
 ```
 
@@ -126,61 +102,32 @@ Consider:
 - For breaking changes: Are they clearly highlighted?
 - Is important context missing?
 
-Present the notes to the user with your assessment and recommendation:
-
-```text
-**Auto-generated notes:**
-[notes here]
-
-**Assessment:** [Your evaluation - what's good, what's missing]
-**Recommendation:** [Accept as-is / Suggest specific improvement]
-```
-
-Use `AskUserQuestion` for confirmation:
-- "Accept notes" - Continue to next step
+Present the notes to the user with your assessment. Use `AskUserQuestion`:
+- "Accept notes" - Continue
 - "Edit notes" - Provide suggested improvement or custom notes
 
-### 5. Monitor npm-publish Workflow
+### 7. Monitor post-release status
+
+Run the status script to check workflow, npm, and milestone:
 
 ```bash
-# Check workflow status
-gh run list --workflow=npm-publish.yml --limit=1 --json status,conclusion,databaseId,displayTitle
+~/.claude/skills/github-release/scripts/github-release-status.sh "${VERSION}"
 ```
 
-Wait for the workflow to complete. Report success or failure.
+The script outputs structured sections: `WORKFLOW`, `NPM`, `MILESTONE`.
 
-#### If Workflow Fails
+From the output:
 
-If the workflow fails due to a fixable issue (e.g., expired npm token, transient error):
+- **Workflow**: If in progress, wait and re-run the script. If failed, report to user — they may need to fix and re-run (`gh run rerun <run-id>`).
+- **NPM**: Confirm the version is live. If pending, wait and re-run.
+- **Milestone**: Note the milestone number for closing.
 
-1. User fixes the issue manually (e.g., updates GitHub secret)
-2. Re-run the failed workflow:
+### 8. Close milestone
 
-```bash
-gh run rerun <run-id>
-```
-
-3. Continue monitoring until success
-
-### 8. Confirm npm Availability
+Once npm publish is confirmed:
 
 ```bash
-# Verify package is published
-npm view @shellicar/{package-name} version
-```
-
-Confirm the new version is available on npm.
-
-### 9. Close Milestone
-
-After all checks pass, close the milestone:
-
-```bash
-# Get milestone number
-MILESTONE_NUMBER=$(gh api repos/{owner}/{repo}/milestones --jq '.[] | select(.title == "${VERSION}") | .number')
-
-# Close milestone
-gh api repos/{owner}/{repo}/milestones/${MILESTONE_NUMBER} -X PATCH -f state=closed
+gh api repos/{owner}/{repo}/milestones/{number} -X PATCH -f state=closed
 ```
 
 Report milestone closed to user.
