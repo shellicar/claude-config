@@ -20,7 +20,7 @@ Perform a maintenance release by gathering security and dependency information, 
 6. Post-ncu fixups: corepack up + biome migrate
 7. Run `pnpm build` and `pnpm test`
 8. Optionally invoke `github-version` for release
-9. Commit and create PR via `github-pr`
+9. Commit, push, and create PR (load `github-pr` and `github-milestone` skills)
 ```
 
 ## Helper Scripts
@@ -57,7 +57,7 @@ Initial TODOs (adjust based on what preflight reveals):
 - Post-ncu fixups (corepack, biome)
 - Verify (build + test)
 - Update CHANGELOG and bump version
-- Commit, push, create PR
+- Commit, push, create PR (load github-pr + github-milestone skills)
 - Wait for merge, create release, clean up
 ```
 
@@ -558,16 +558,9 @@ This script is idempotent and can be auto-approved in settings.json.
 
 ### 5.4 Create PR
 
-Use `AskUserQuestion` to confirm:
+You MUST load and follow the `github-pr` skill to create the PR. Do NOT run ad-hoc `gh pr create` or `az rest` commands — the skill and its scripts encode the required parameters.
 
-- "Commit and create PR" - Proceed with commit, push, and PR creation
-- "Commit only" - Commit changes without creating a PR
-
-If creating a PR, use the `github-pr` skill. Ensure the PR includes:
-
-- **Assignee**: `--assignee @me`
-- **Milestone**: Use the `github-milestone` skill to find/create the milestone
-- **Label**: `--label dependencies`
+You MUST load the `github-milestone` skill to find or create the milestone before creating the PR.
 
 After PR creation, **always link the PR URL** back to the user so they can review it.
 
