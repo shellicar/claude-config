@@ -62,9 +62,21 @@ else
 fi
 
 # Execute - "$@" preserves quoting of remaining args
+set +e
 if [ -n "$TEMP_FILE" ]; then
   az rest --method "$METHOD" --uri "$URI" --resource "$RESOURCE" "$@" > "$TEMP_FILE"
-  echo "$TEMP_FILE"
+  STATUS=$?
 else
   az rest --method "$METHOD" --uri "$URI" --resource "$RESOURCE" "$@"
+  STATUS=$?
+fi
+set -e
+
+if [ $STATUS -ne 0 ]; then
+  echo "❌ az rest failed (exit $STATUS): $METHOD $URI" >&2
+  exit $STATUS
+fi
+
+if [ -n "$TEMP_FILE" ]; then
+  echo "$TEMP_FILE"
 fi

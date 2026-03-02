@@ -26,22 +26,13 @@ If it fails, proceed without convention-specific rules.
 
 Run the gather script to collect all git state in one call:
 
-**GitHub:**
-```bash
-~/.claude/skills/git-commit/scripts/git-commit-info.sh --github
-```
-
-**Azure DevOps:**
-```bash
-~/.claude/skills/git-commit/scripts/git-commit-info.sh --azure-devops --project <Project>
-```
-
-**Unknown/no convention:**
 ```bash
 ~/.claude/skills/git-commit/scripts/git-commit-info.sh
 ```
 
-The script outputs structured sections: `BRANCH`, `MERGED_PR`, `STAGED_STAT`, `STATUS`, `STAGED_DIFF`, `RECENT_LOG`.
+The script auto-detects the platform (GitHub or Azure DevOps) and project name from `git remote get-url origin`.
+
+The script outputs structured sections: `BRANCH`, `MERGED_PR`, `STAGED_STAT`, `STATUS`, `RECENT_LOG`.
 
 ### 3. Analyse the gathered state
 
@@ -56,7 +47,7 @@ From the script output, check the following — stop and inform the Supreme Comm
 
 ### 4. Secret and PII scanning
 
-Load the `secret-scanning` skill and apply its pattern tables and Finding Disposition Process to the `STAGED_DIFF` from the gather output.
+Load the `secret-scanning` skill and scan staged files before committing.
 
 If findings exist, present them and wait for confirmation before proceeding. Do not silently commit files containing matches.
 
@@ -86,7 +77,58 @@ Confirm the commit was created with the expected message.
 
 Use `AskUserQuestion` with options like "Push" and "Don't push". If push requested, invoke the `git-push` skill.
 
-## IDE Diagnostics
+## Pre-commit Hook Failure
+
+If the commit fails due to pre-commit hooks:
+
+### Step 1: Identify available fixers
+
+Read the hook configuration (e.g., `lefthook.yml`) and `package.json` scripts to determine which tools are configured and what fix commands are available. This is a quick read — do not investigate beyond these files. If it's not obvious what to run, ask the Supreme Commander.
+
+### Step 2: Run automated fixers
+
+Use CLI tools to fix issues. Do NOT manually edit files. Only run fixers on the files we have modified — not the entire project.
+
+Get the list of changed files from `git diff --cached --name-only` and pass them to the fixer.
+
+#### Biome
+
+```bash
+pnpm biome check --diagnostic-level=error --write <file1> <file2> ...
+```
+
+#### ESLint
+
+```bash
+pnpm run lint --fix -- <file1> <file2> ...
+# or
+pnpm run lint -- --fix <file1> <file2> ...
+```
+
+### Step 2: Re-stage and retry
+
+Stage the fixed files, then create a **NEW commit** (do not amend — the previous commit didn't happen).
+
+### Step 3: Verify
+
+Verify with commands that do not flood output:
+
+```bash
+pnpm biome check --diagnostic-level=error
+```
+
+### Step 4: If automated fixers couldn't resolve everything
+
+Check whether the remaining issues are in files **outside** the changeset (i.e., pre-existing issues in files we are not checking in).
+
+- **Issues outside our changeset**: `--no-verify` is allowed, but you **MUST** ask the Supreme Commander for permission first.
+- **Issues inside our changeset**: Either ask the Supreme Commander for permission to manually fix (explain what you would change), or hand over to the Supreme Commander. Mention all remaining issues.
+
+### Strictly forbidden
+
+- `--unsafe` or any biome unsafe fix flags — forbidden under **all** circumstances
+- `npx` / `pnpx` — tools are already installed; using these wastes time downloading and may produce wrong results
+- Manually editing files to pass hooks **without permission** — you may ask, but you do not fix without asking
 
 When files are edited, IDE diagnostics may appear. Handle them as follows:
 

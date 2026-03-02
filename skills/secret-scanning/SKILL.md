@@ -365,6 +365,43 @@ The `git-commit` skill scans staged files before committing. Present findings us
 
 The `git-push` skill loads this skill and scans all commits being pushed. Present findings using the disposition process above. Do not push until every finding has an explicit disposition.
 
+### File Selection for Scanning
+
+When scanning a set of changed files (from staged changes or commits), skip files that are unlikely to contain secrets and would waste context. Scan everything else.
+
+**General skip list** — no meaningful secret risk:
+- Generated source code (GraphQL codegen, OpenAPI/Swagger clients, etc.)
+- Large data files (mock data JSON, seed data, test fixture data)
+- Lock files (already covered by Skip Extensions below)
+
+**Power BI (`.pbip` projects)**:
+- Skip: layout and metadata files (`.pbir`, `.pbism`, `.platform`, `diagramLayout.json`, `editorSettings.json`, `LocalDateTable_*.tmdl`, `DateTableTemplate_*.tmdl`)
+- Scan: `expressions.tmdl` — contains Power Query M expressions that may embed connection strings or credentials
+- Scan: table `.tmdl` files — mostly column metadata (safe to skim past), but contain `partition ... = m` blocks with M queries that can reference storage accounts, databases, or credentials (e.g. `AzureStorage.Blobs(...)`, `Sql.Database(...)`)
+
+100% coverage is not the goal — meaningful coverage of files where secrets actually appear is.
+
+### Binary Files
+
+If git shows a file as binary in the diff, you cannot scan its content. However, do not silently ignore it — a text file containing secrets could be committed with binary attributes to bypass scanning.
+
+To verify, check the file type and size:
+
+```bash
+file <path>
+wc -c < <path>
+```
+
+If `file` reports it as text despite git treating it as binary, check the size. If it's small enough to scan without flooding context, scan it. If it's large, flag it to the Supreme Commander with the file type and size — let them decide.
+
+### Scan Reporting
+
+After scanning, you **MUST** output a summary listing:
+- All files scanned and their findings (if any)
+- All files skipped and the reason for skipping each one (e.g. "generated codegen", "binary file", "lock file", "Power BI layout metadata")
+
+This ensures no file is silently ignored. The Supreme Commander can then challenge any skip decision.
+
 ### Skip Paths
 
 These paths produce frequent false positives and should be treated with lower severity when scanning. Still flag findings, but note the path is in the skip list:
