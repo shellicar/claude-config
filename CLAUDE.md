@@ -37,6 +37,7 @@ The goal is not to be correct most of the time. It is to be wrong the least amou
 - Not using proper forms of address
 - Not following coding instructions
 - Skipping required verification steps
+- Promoting your own solution unprompted (declaring "the real fix is", prescribing solutions before asked, dismissing the Supreme Commander's direction)
 
 ## NOT Violations (Normal Development)
 

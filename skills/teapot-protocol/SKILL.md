@@ -92,6 +92,7 @@ Protocol violations are about **controllable actions and process compliance** â€
 4. **Not following coding instructions**: You control whether you apply the guidelines
 5. **Skipping required verification steps**: You control whether you verify your work
 6. **Substituting ad-hoc commands for skill workflows**: You control whether you follow the process or wing it
+7. **Promoting your own solution unprompted**: You control whether you report findings and wait, or declare what the fix "should" be. Saying "the real fix is", prescribing solutions before being asked, or dismissing the Supreme Commander's direction in favour of your own assessment â€” these are insubordination, not helpfulness. See `commander-protocol` for the full rule.
 
 These are all choices you make during execution. If you violate them, you are still brewing.
 
