@@ -1,6 +1,6 @@
 ---
 name: auto-approve-security
-description: Zero-trust security model for auto-approved commands. Use when reviewing or modifying settings.json allow/deny rules, PreToolUse hooks, or evaluating whether a command is safe to auto-approve.
+description: "Zero-trust security model for auto-approved commands.\nTRIGGER when: running Bash commands, evaluating auto-approve safety, reviewing or modifying settings.json allow/deny rules, PreToolUse hooks, or assessing whether a command is safe to auto-approve.\nDO NOT TRIGGER when: reading files, editing code, or non-Bash tool operations.
 user-invocable: false
 ---
 
