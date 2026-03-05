@@ -1,11 +1,11 @@
 ---
 name: azure-devops-config
-description: Azure DevOps project structure and team configuration. Use when discovering teams, area paths, iteration paths, configuring team settings (backlog visibility, area assignments), applying standard backlog column options, setting up delivery plans, or configuring hierarchical team patterns (portfolio teams vs feature teams).
+description: "Azure DevOps project structure, team configuration, and branch policies.\nTRIGGER when: discovering teams, configuring area paths, iteration paths, backlog visibility, column layouts, delivery plans, hierarchical team patterns, or managing branch protection policies.\nDO NOT TRIGGER when: creating/managing PRs, querying/updating work items, or running pipelines."
 ---
 
 # Azure DevOps Configuration
 
-**Scope:** CLI commands and REST API calls for configuring Azure DevOps project structure — teams, area/iteration paths, backlog visibility, delivery plans, and column layouts. Work item audits live in `work-item-hygiene`. Organisational philosophy lives in `work-organisation`.
+**Scope:** CLI commands and REST API calls for configuring Azure DevOps project structure — teams, area/iteration paths, backlog visibility, delivery plans, column layouts, and branch policies. Work item audits live in `work-item-hygiene`. Organisational philosophy lives in `work-organisation`.
 
 Project structure and team configuration. For work item CRUD see `azure-devops-boards`, for PRs see `azure-devops-repos`.
 
@@ -153,3 +153,67 @@ Apply standard column layouts across all teams. See [references/backlog-columns.
         --temp-file
       ```
       Read each temp file. Print a **verification table** of ALL teams: team name, key, expected columns, actual columns, match (yes/no).
+
+## Branch Policies
+
+Query all branch policies for a project:
+
+```bash
+$ADO_REST --method GET \
+  --path 'https://dev.azure.com/{org}/{project}/_apis/policy/configurations' \
+  --param 'api-version=7.1'
+```
+
+Common policy types:
+- `Require a merge strategy` — squash only, etc.
+- `Comment requirements` — all comments must be resolved
+- `Minimum number of reviewers` — required approvals
+- `Required reviewers` — specific people must approve
+- `Work item linking` — require linked work items
+
+For **build validation policies**, see `azure-devops-pipelines`.
+
+### Managing Policies
+
+Use the REST API to create and update policies. Each policy type has a specific `type.id` — query existing policies first to find the type IDs for your org.
+
+```bash
+# Create a policy configuration
+az rest --method POST \
+  --url "https://dev.azure.com/{org}/{project}/_apis/policy/configurations?api-version=7.1" \
+  --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+  --body '{
+    "isEnabled": true,
+    "isBlocking": true,
+    "type": {"id": "<policy-type-id>"},
+    "settings": {
+      "minimumApproverCount": 1,
+      "creatorVoteCounts": false,
+      "scope": [{
+        "repositoryId": "<repo-id>",
+        "refName": "refs/heads/main",
+        "matchKind": "exact"
+      }]
+    }
+  }'
+
+# Update a policy
+az rest --method PUT \
+  --url "https://dev.azure.com/{org}/{project}/_apis/policy/configurations/{policy-id}?api-version=7.1" \
+  --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+  --body '{ ... }'
+```
+
+### Querying Repo ID
+
+Policies require `repositoryId`. To find it:
+
+```bash
+$ADO_REST --method GET \
+  --path 'https://dev.azure.com/{org}/{project}/_apis/git/repositories/{repo}' \
+  --param 'api-version=7.1' | jq '.id'
+```
+
+### Branch Scoping
+
+Policies scope to branches via the `settings.scope` array. Use the full ref (`refs/heads/main`).

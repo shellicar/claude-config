@@ -63,7 +63,7 @@ When the epic is complete, PR the epic branch into `main`.
 
 Before committing directly to any branch, check if it has branch policies requiring PRs. Both `main` and `epic/*` branches typically have policies.
 
-To check, get the repository GUID and query policies for the current branch. See `azure-devops-repos` skill for details on `--repository-id` and `--branch` usage.
+To check, get the repository GUID and query policies for the current branch. See `azure-devops-config` skill for details on `--repository-id` and `--branch` usage.
 
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)

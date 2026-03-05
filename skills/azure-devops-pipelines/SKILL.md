@@ -131,6 +131,6 @@ This is important for:
 
 ## Branch Policies
 
-For general branch policies (reviewers, merge strategy, comments, work item linking), see `azure-devops-repos`.
+For general branch policies (reviewers, merge strategy, comments, work item linking), see `azure-devops-config`.
 
 Build validation policies are covered above in [Pipeline Triggers vs Build Validation Policies](#pipeline-triggers-vs-build-validation-policies).
