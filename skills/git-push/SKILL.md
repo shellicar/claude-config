@@ -15,14 +15,7 @@ Always `cd` to the project directory first, then use bare `git` commands (e.g., 
 
 ## Steps
 
-### 1. Detect convention
-
-If not already known from the calling workflow (e.g. `git-commit`), use the `detect-convention` skill to determine the convention and default branch.
-
-If it outputs a convention name, load the corresponding `<convention>-conventions` skill.
-If it fails, proceed without convention-specific rules.
-
-### 2. Gather git state
+### 1. Gather git state
 
 Run the gather script to collect push state in one call:
 
@@ -30,17 +23,21 @@ Run the gather script to collect push state in one call:
 ~/.claude/skills/git-push/scripts/git-push-info.sh
 ```
 
-The script outputs structured sections: `BRANCH`, `HAS_UPSTREAM`, `COMMITS_TO_PUSH`, `DIVERGENCE`, `DIFFSTAT`.
+The script calls `detect-convention` internally and outputs `Convention: <name>` in the header.
 
-### 3. Analyse the gathered state
+The script outputs structured sections: `BRANCH`, `PROTECTED_BRANCHES`, `HAS_UPSTREAM`, `COMMITS_TO_PUSH`, `DIVERGENCE`, `DIFFSTAT`.
+
+After running the script, load the `<convention>-conventions` skill if `Convention:` is present in the output. If not present, proceed without convention-specific rules.
+
+### 2. Analyse the gathered state
 
 From the script output, check the following — stop and inform the Supreme Commander if any fail:
 
-- **Branch protection**: If a convention is loaded, check whether direct pushes are allowed to this branch. Generally, branches like `main` or `epic/*` are protected and require PRs.
+- **Branch protection** *(check this first)*: If `BRANCH` appears in `PROTECTED_BRANCHES` (and `PROTECTED_BRANCHES` is not `none`), **STOP immediately** — direct pushes to this branch are not allowed. Inform the Supreme Commander and offer to create a branch or open a PR.
 - **No commits to push**: If `COMMITS_TO_PUSH` is empty, inform the Supreme Commander and stop.
 - **Divergence**: If `DIVERGENCE` shows behind count > 0, the branch has diverged — STOP and inform the Supreme Commander, as this may require manual intervention (rebase, merge, or force push).
 
-### 4. Triage files for secret scanning
+### 3. Triage files for secret scanning
 
 Review the `DIFFSTAT` section. For each commit, identify files that need scanning vs files that can be skipped:
 
@@ -54,7 +51,7 @@ Review the `DIFFSTAT` section. For each commit, identify files that need scannin
 - Source code, config files, scripts, environment files
 - Any file that could contain credentials, API keys, tokens, or PII
 
-### 5. Secret and PII scanning
+### 4. Secret and PII scanning
 
 Load the `secret-scanning` skill. Fetch diffs only for commits/files that need scanning:
 
@@ -74,7 +71,7 @@ Apply the pattern tables and Finding Disposition Process to each commit's diff.
 
 Do NOT silently push code containing matches. Present findings and wait for confirmation from the Supreme Commander before proceeding.
 
-### 6. Push
+### 5. Push
 
 ```bash
 git push
@@ -86,7 +83,7 @@ For new branches (no upstream):
 git push -u origin <branch-name>
 ```
 
-### 7. Verify and offer PR
+### 6. Verify and offer PR
 
 ```bash
 git log @{u}..HEAD --oneline
