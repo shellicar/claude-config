@@ -23,17 +23,9 @@ This skill uses helper scripts in `~/.claude/skills/github-pr/scripts/`:
 | `github-pr-info.sh` | Gather all PR state: branch, merged PR, existing PR, ancestor, commits, diffstat |
 | `create-github-pr.sh` | Create PR with enforced required parameters (--title, --body, --milestone, --assignee) |
 
-Convention detection is handled by the `detect-convention` skill.
-
 ## Usage
 
-### 1. Detect Convention
-
-Use the `detect-convention` skill to determine which convention applies.
-
-Load the corresponding `<convention>-conventions` skill based on the convention name.
-
-### 2. Gather PR State
+### 1. Gather PR State
 
 Run the gather script to collect all PR-related state in one call:
 
@@ -41,9 +33,13 @@ Run the gather script to collect all PR-related state in one call:
 ~/.claude/skills/github-pr/scripts/github-pr-info.sh
 ```
 
-The script outputs structured sections: `BRANCH`, `DEFAULT_BRANCH`, `MERGED_PR`, `EXISTING_PR`, `ANCESTOR`, `COMMITS`, `DIFFSTAT`.
+The script calls `detect-convention` internally and outputs `Convention: <name>` in the header.
 
-### 3. Analyse the Gathered State
+The script outputs structured sections: `BRANCH`, `DEFAULT_BRANCH`, `MERGED_PR`, `EXISTING_PR`, `ANCESTOR`, `COMMITS`, `MILESTONES`, `DIFFSTAT`.
+
+After running the script, load the `<convention>-conventions` skill if `Convention:` is present in the output. If not present, proceed without convention-specific rules.
+
+### 2. Analyse the Gathered State
 
 From the script output, check the following — stop and inform the Supreme Commander if any fail:
 
@@ -52,7 +48,7 @@ From the script output, check the following — stop and inform the Supreme Comm
 - **Existing PR**: If `EXISTING_PR` is not empty, this is an update — use `gh pr edit` instead of creating a new PR.
 - **No commits**: If `COMMITS` is empty, STOP — there is nothing to create a PR for.
 
-### 5. Create PR Content
+### 3. Create PR Content
 
 **Title**: Short summary (under 70 characters), imperative mood.
 
@@ -102,7 +98,7 @@ See `writing-style` skill for the full style guide. Key points:
 - Short phrases, not full sentences
 - If the title says it all, an empty body is fine
 
-### 6. Resolve Milestone (GitHub)
+### 4. Resolve Milestone (GitHub)
 
 You MUST load the `github-milestone` skill and resolve the milestone BEFORE creating the PR. The milestone is a required parameter for `gh pr create`.
 
@@ -111,7 +107,7 @@ Follow the milestone skill's workflow:
 2. If one exists, use it
 3. If none exists, ask the user which to create
 
-### 7. Create or Update PR
+### 5. Create or Update PR
 
 **GitHub** (create) — use the enforcement script:
 

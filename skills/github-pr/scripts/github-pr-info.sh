@@ -5,6 +5,18 @@ set -e
 # Consolidates branch check, merged PR, ancestor detection, and change summary
 # Replaces: git-context.sh, git-ancestor.sh, git-summary.sh
 
+# Detect convention (name, default branch, protected branches)
+DETECT_SCRIPT="$HOME/.claude/skills/detect-convention/scripts/detect-convention.sh"
+CONVENTION=""
+if [ -f "$DETECT_SCRIPT" ]; then
+  CONVENTION_OUTPUT=$("$DETECT_SCRIPT" 2>/dev/null || echo "")
+  CONVENTION=$(echo "$CONVENTION_OUTPUT" | sed -n '1p')
+fi
+
+if [ -n "$CONVENTION" ]; then
+  echo "Convention: $CONVENTION"
+fi
+
 # Detect default branch
 DEFAULT=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
 DEFAULT=${DEFAULT:-main}

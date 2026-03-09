@@ -15,6 +15,18 @@
 
 set -e
 
+# Detect convention
+DETECT_SCRIPT="$HOME/.claude/skills/detect-convention/scripts/detect-convention.sh"
+CONVENTION=""
+if [ -f "$DETECT_SCRIPT" ]; then
+  CONVENTION_OUTPUT=$("$DETECT_SCRIPT" 2>/dev/null || echo "")
+  CONVENTION=$(echo "$CONVENTION_OUTPUT" | sed -n '1p')
+fi
+
+if [ -n "$CONVENTION" ]; then
+  echo "Convention: $CONVENTION"
+fi
+
 section() {
   printf '\n--- %s ---\n' "$1"
 }
