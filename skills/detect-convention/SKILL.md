@@ -18,9 +18,10 @@ Detect the project convention and default branch from the current git repository
 
 ### Output
 
-Two lines on stdout:
+Three lines on stdout:
 1. Convention name (e.g. `shellicar-config`, `eagers`, `hopeventures`)
 2. Default branch (e.g. `main`, `master`)
+3. Protected branches (space-separated, or `none` if direct commits are allowed)
 
 ### On failure
 
