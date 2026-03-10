@@ -1,12 +1,9 @@
 #!/bin/sh
 # Detect which convention applies to the current repository
-# Outputs the convention name, default branch, and protected branches
 # Requires BOTH remote URL AND directory path to match (strict mode)
 #
-# Output format (one per line):
-#   <convention-name>
-#   <default-branch>
-#   <protected-branches>  (space-separated branch names, or "none")
+# Output: JSON
+#   {"convention":"...","default_branch":"..."}
 
 set -e
 
@@ -72,22 +69,8 @@ detect_convention() {
   return 1
 }
 
-protected_branches() {
-  case "$1" in
-    shellicar-oss|shellicar|eagers|hopeventures|flightrac)
-      echo "main"
-      ;;
-    shellicar-config)
-      echo "none"
-      ;;
-    *)
-      echo "none"
-      ;;
-  esac
-}
-
 CONVENTION=$(detect_convention)
 DEFAULT_BRANCH=$(detect_default_branch)
-PROTECTED=$(protected_branches "$CONVENTION")
 
-printf '%s\n%s\n%s\n' "$CONVENTION" "$DEFAULT_BRANCH" "$PROTECTED"
+printf '{"convention":"%s","default_branch":"%s"}\n' \
+  "$CONVENTION" "$DEFAULT_BRANCH"

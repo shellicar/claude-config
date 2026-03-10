@@ -2,79 +2,43 @@
 # Compare or sync YAML pipeline triggers with build validation policies
 #
 # Usage:
-#   pipeline-policy-sync.sh --org <ORG> --project <PROJECT> --yaml <PATH> --pipeline-id <ID> [--compare|--sync]
+#   echo '{"org":"myorg","project":"myproject","yaml":"azure-pipelines.yml","pipeline_id":"42"}' | pipeline-policy-sync.sh
+#   echo '{"org":"myorg","project":"myproject","yaml":"azure-pipelines.yml","pipeline_id":"42","mode":"sync"}' | pipeline-policy-sync.sh
 #
-# Options:
-#   --org          Azure DevOps organization name (required)
-#   --project      Azure DevOps project name (required)
-#   --yaml         Path to azure-pipelines.yml file (required)
-#   --pipeline-id  Pipeline/build definition ID (required)
-#   --compare      Show differences between YAML and policy (default)
-#   --sync         Update policy to match YAML
+# Input JSON fields:
+#   org          Azure DevOps organization name (required)
+#   project      Azure DevOps project name (required)
+#   yaml         Path to azure-pipelines.yml file (required)
+#   pipeline_id  Pipeline/build definition ID (required)
+#   mode         One of: compare (default), sync
 
 set +e
 
-ORG=""
-PROJECT=""
-YAML_PATH=""
-PIPELINE_ID=""
-MODE="compare"
-
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --org)
-      ORG="$2"
-      shift 2
-      ;;
-    --project)
-      PROJECT="$2"
-      shift 2
-      ;;
-    --yaml)
-      YAML_PATH="$2"
-      shift 2
-      ;;
-    --pipeline-id)
-      PIPELINE_ID="$2"
-      shift 2
-      ;;
-    --compare)
-      MODE="compare"
-      shift
-      ;;
-    --sync)
-      MODE="sync"
-      shift
-      ;;
-    -h|--help)
-      echo "Usage: pipeline-policy-sync.sh --org <ORG> --project <PROJECT> --yaml <PATH> --pipeline-id <ID> [--compare|--sync]"
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      exit 1
-      ;;
-  esac
-done
+INPUT=$(cat)
+ORG=$(printf '%s' "$INPUT" | jq -r '.org')
+PROJECT=$(printf '%s' "$INPUT" | jq -r '.project')
+YAML_PATH=$(printf '%s' "$INPUT" | jq -r '.yaml')
+PIPELINE_ID=$(printf '%s' "$INPUT" | jq -r '.pipeline_id')
+MODE=$(printf '%s' "$INPUT" | jq -r '.mode // "compare"')
 
 # Validate required parameters
-if [ -z "$ORG" ]; then
-  echo "❌ Error: --org is required" >&2
+if [ -z "$ORG" ] || [ "$ORG" = "null" ]; then
+  echo "❌ Error: .org is required" >&2
   exit 1
 fi
 
-if [ -z "$PROJECT" ]; then
-  echo "❌ Error: --project is required" >&2
+if [ -z "$PROJECT" ] || [ "$PROJECT" = "null" ]; then
+  echo "❌ Error: .project is required" >&2
   exit 1
 fi
 
-if [ -z "$YAML_PATH" ]; then
-  echo "❌ Error: --yaml is required" >&2
+if [ -z "$YAML_PATH" ] || [ "$YAML_PATH" = "null" ]; then
+  echo "❌ Error: .yaml is required" >&2
   exit 1
 fi
 
-if [ -z "$PIPELINE_ID" ]; then
-  echo "❌ Error: --pipeline-id is required" >&2
+if [ -z "$PIPELINE_ID" ] || [ "$PIPELINE_ID" = "null" ]; then
+  echo "❌ Error: .pipeline_id is required" >&2
   exit 1
 fi
 

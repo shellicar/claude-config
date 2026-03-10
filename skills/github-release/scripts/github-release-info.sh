@@ -1,17 +1,19 @@
 #!/bin/sh
 # Gather all state needed before creating a GitHub release
-# Outputs structured sections that Claude can parse in one read
+# Outputs JSON that Claude can parse in one read
 #
 # Usage: github-release-info.sh
 #
-# Sections output:
-#   REPO            - repository name from git remote
-#   BRANCH          - current branch name
-#   WORKING_TREE    - clean or dirty
-#   VERSION         - version from package.json (monorepo-aware)
-#   CHANGELOG       - whether CHANGELOG.md contains the version entry
-#   MILESTONE       - milestone data for this version (or not found)
-#   EXISTING        - whether a release already exists for this version
+# Output fields:
+#   convention      - detected convention name
+#   owner           - GitHub owner from git remote
+#   repo            - GitHub repo name from git remote
+#   branch          - current branch name
+#   working_tree    - "clean" or "dirty"
+#   version         - version from package.json (monorepo-aware)
+#   changelog       - "found" or "missing"
+#   milestones      - array of open milestone objects
+#   existing_release - release object if exists, else null
 
 set -e
 
@@ -19,85 +21,68 @@ set -e
 DETECT_SCRIPT="$HOME/.claude/skills/detect-convention/scripts/detect-convention.sh"
 CONVENTION=""
 if [ -f "$DETECT_SCRIPT" ]; then
-  CONVENTION_OUTPUT=$("$DETECT_SCRIPT" 2>/dev/null || echo "")
-  CONVENTION=$(echo "$CONVENTION_OUTPUT" | sed -n '1p')
+  CONVENTION=$(("$DETECT_SCRIPT" 2>/dev/null || echo '{}') | jq -r '.convention // ""')
 fi
 
-if [ -n "$CONVENTION" ]; then
-  echo "Convention: $CONVENTION"
-fi
-
-section() {
-  printf '\n--- %s ---\n' "$1"
-}
-
-# Repo name from git remote
-section "REPO"
+# Repo owner/name from git remote
 REMOTE=$(git remote get-url origin 2>/dev/null || echo "")
-if [ -n "$REMOTE" ]; then
-  REPO=$(echo "$REMOTE" | sed 's/.*github.com[:/]//' | sed 's/\.git$//' | cut -d'/' -f2)
-  OWNER=$(echo "$REMOTE" | sed 's/.*github.com[:/]//' | sed 's/\.git$//' | cut -d'/' -f1)
-  echo "owner: $OWNER"
-  echo "repo: $REPO"
-else
-  echo "ERROR: no git remote found"
+if [ -z "$REMOTE" ]; then
+  echo "ERROR: no git remote found" >&2
   exit 1
 fi
+REPO=$(echo "$REMOTE" | sed 's/.*github.com[:/]//' | sed 's/\.git$//' | cut -d'/' -f2)
+OWNER=$(echo "$REMOTE" | sed 's/.*github.com[:/]//' | sed 's/\.git$//' | cut -d'/' -f1)
 
 # Branch
-section "BRANCH"
-git branch --show-current
+BRANCH=$(git branch --show-current)
 
 # Working tree
-section "WORKING_TREE"
 if git diff --quiet HEAD 2>/dev/null; then
-  echo "clean"
+  WORKING_TREE="clean"
 else
-  echo "dirty"
-  git status --short
+  WORKING_TREE="dirty"
 fi
 
 # Version from package.json (try monorepo first, then root)
-section "VERSION"
 VERSION=""
 if ls packages/*/package.json >/dev/null 2>&1; then
   VERSION=$(jq -r '.version' packages/*/package.json 2>/dev/null | head -1)
-  echo "$VERSION (from packages/*/package.json)"
 fi
 if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
   VERSION=$(jq -r '.version' package.json 2>/dev/null)
-  echo "$VERSION (from package.json)"
-fi
-if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-  echo "ERROR: no version found"
 fi
 
 # CHANGELOG check
-section "CHANGELOG"
+CHANGELOG_STATUS="missing"
 if [ -f CHANGELOG.md ]; then
   if grep -q "## \[$VERSION\]" CHANGELOG.md 2>/dev/null; then
-    echo "found"
-    grep "## \[$VERSION\]" CHANGELOG.md
-  else
-    echo "MISSING: no entry for $VERSION in CHANGELOG.md"
+    CHANGELOG_STATUS="found"
   fi
-else
-  echo "MISSING: no CHANGELOG.md file"
 fi
 
 # Open milestones
-section "MILESTONE"
-gh api "repos/$OWNER/$REPO/milestones" --jq '.[] | {title: .title, number: .number, open_issues: .open_issues, closed_issues: .closed_issues}' 2>/dev/null || echo "none"
+MILESTONES=$(gh api "repos/$OWNER/$REPO/milestones" \
+  --jq '[.[] | {title: .title, number: .number, open_issues: .open_issues, closed_issues: .closed_issues}]' \
+  2>/dev/null || echo "[]")
 
 # Existing release
-section "EXISTING"
+EXISTING_RELEASE="null"
 if [ -n "$VERSION" ] && [ "$VERSION" != "null" ]; then
   if gh release view "$VERSION" >/dev/null 2>&1; then
-    echo "EXISTS: release $VERSION already exists"
-    gh release view "$VERSION" --json tagName,publishedAt,url --jq '{tag: .tagName, published: .publishedAt, url: .url}'
-  else
-    echo "none"
+    EXISTING_RELEASE=$(gh release view "$VERSION" \
+      --json tagName,publishedAt,url \
+      --jq '{tag: .tagName, published: .publishedAt, url: .url}')
   fi
-else
-  echo "SKIP: no version"
 fi
+
+jq -n \
+  --arg convention "$CONVENTION" \
+  --arg owner "$OWNER" \
+  --arg repo "$REPO" \
+  --arg branch "$BRANCH" \
+  --arg working_tree "$WORKING_TREE" \
+  --arg version "${VERSION:-}" \
+  --arg changelog "$CHANGELOG_STATUS" \
+  --argjson milestones "$MILESTONES" \
+  --argjson existing_release "$EXISTING_RELEASE" \
+  '{convention: $convention, owner: $owner, repo: $repo, branch: $branch, working_tree: $working_tree, version: $version, changelog: $changelog, milestones: $milestones, existing_release: $existing_release}'

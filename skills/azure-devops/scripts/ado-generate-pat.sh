@@ -5,47 +5,25 @@
 # Scopes: https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/oauth?view=azure-devops#available-scopes
 #
 # Usage:
-#   ado-generate-pat.sh --org <ORG> [--name <PAT_NAME>] [--scopes <SCOPES>]
+#   echo '{"org":"myorg"}' | ado-generate-pat.sh
+#   echo '{"org":"myorg","name":"MyPat","scopes":"vso.code vso.build"}' | ado-generate-pat.sh
+#
+# Input JSON fields:
+#   org     Azure DevOps organisation name (required)
+#   name    Display name for the PAT (default: AZCLIGeneratedPat)
+#   scopes  Space-delimited scopes (default: vso.packaging_manage)
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-ORG=""
-PAT_NAME="AZCLIGeneratedPat"
-SCOPES="vso.packaging_manage"
+INPUT=$(cat)
+ORG=$(printf '%s' "$INPUT" | jq -r '.org')
+PAT_NAME=$(printf '%s' "$INPUT" | jq -r '.name // "AZCLIGeneratedPat"')
+SCOPES=$(printf '%s' "$INPUT" | jq -r '.scopes // "vso.packaging_manage"')
 
-while [ $# -gt 0 ]; do
-  case $1 in
-    --org)
-      ORG="$2"
-      shift 2
-      ;;
-    --name)
-      PAT_NAME="$2"
-      shift 2
-      ;;
-    --scopes)
-      SCOPES="$2"
-      shift 2
-      ;;
-    -h|--help)
-      echo "Usage: ado-generate-pat.sh --org <ORG> [--name <PAT_NAME>] [--scopes <SCOPES>]"
-      echo ""
-      echo "  --org     Azure DevOps organisation name (required)"
-      echo "  --name    Display name for the PAT (default: AZCLIGeneratedPat)"
-      echo "  --scopes  Space-delimited scopes (default: vso.packaging_manage)"
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      exit 1
-      ;;
-  esac
-done
-
-if [ -z "$ORG" ]; then
-  echo "Error: --org is required" >&2
+if [ -z "$ORG" ] || [ "$ORG" = "null" ]; then
+  echo "Error: .org is required" >&2
   exit 1
 fi
 

@@ -2,15 +2,13 @@
 # Generate or validate Azure DevOps PR merge commit message
 #
 # Usage:
-#   pr-merge-message.sh --org <ORG_NAME> --id <PR_ID> [--validate|--set|--show|--set-auto-complete]
+#   echo '{"org":"myorg","id":"123"}' | pr-merge-message.sh
+#   echo '{"org":"myorg","id":"123","mode":"set-auto-complete"}' | pr-merge-message.sh
 #
-# Options:
-#   --org              Azure DevOps organization name (required, e.g., "hopeventures")
-#   --id               PR ID (required)
-#   --validate         Compare current merge commit message against expected (default)
-#   --set              Update the merge commit message to match expected format
-#   --show             Just show what the merge commit message should be
-#   --set-auto-complete  Set auto-complete with squash, transition-work-items, AND merge commit message
+# Input JSON fields:
+#   org   Azure DevOps organization name (required, e.g., "hopeventures")
+#   id    PR ID (required)
+#   mode  One of: validate (default), set, show, set-auto-complete
 #
 # Expected format:
 #   Merged PR {id}: {title}
@@ -117,51 +115,18 @@ do_set_auto_complete() {
 
 # --- Main ---
 
-# Parse arguments
-PR_ID=""
-ORG=""
-MODE="validate"
+INPUT=$(cat)
+ORG=$(printf '%s' "$INPUT" | jq -r '.org')
+PR_ID=$(printf '%s' "$INPUT" | jq -r '.id')
+MODE=$(printf '%s' "$INPUT" | jq -r '.mode // "validate"')
 
-while [ $# -gt 0 ]; do
-  case $1 in
-    --id)
-      PR_ID="$2"
-      shift 2
-      ;;
-    --org)
-      ORG="$2"
-      shift 2
-      ;;
-    --validate)
-      MODE="validate"
-      shift
-      ;;
-    --set)
-      MODE="set"
-      shift
-      ;;
-    --show)
-      MODE="show"
-      shift
-      ;;
-    --set-auto-complete)
-      MODE="set-auto-complete"
-      shift
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      exit 1
-      ;;
-  esac
-done
-
-if [ -z "$ORG" ]; then
-  echo "Error: --org is required" >&2
+if [ -z "$ORG" ] || [ "$ORG" = "null" ]; then
+  echo "Error: .org is required" >&2
   exit 1
 fi
 
-if [ -z "$PR_ID" ]; then
-  echo "Error: --id is required" >&2
+if [ -z "$PR_ID" ] || [ "$PR_ID" = "null" ]; then
+  echo "Error: .id is required" >&2
   exit 1
 fi
 
