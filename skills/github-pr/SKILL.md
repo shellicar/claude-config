@@ -109,18 +109,19 @@ Follow the milestone skill's workflow:
 
 ### 5. Create or Update PR
 
-**GitHub** (create) — use the enforcement script:
+**GitHub** (create) — pipe JSON into the enforcement script:
 
 ```bash
-~/.claude/skills/github-pr/scripts/create-github-pr.sh \
-  --title "Title" \
-  --body "Description" \
-  --milestone "1.3" \
-  --assignee "@me" \
-  --label "dependencies"
+jq -n '{
+  title: "Title",
+  body: "## Summary\n\n- What changed",
+  milestone: "1.3",
+  assignee: "@me",
+  labels: ["bug"]
+}' | ~/.claude/skills/github-pr/scripts/create-github-pr.sh
 ```
 
-The script requires `--title`, `--body`, `--milestone`, and `--assignee`. It will reject the call if any are missing. `--label` is optional and repeatable.
+Required fields: `title`, `body`, `milestone`, `assignee`. The script will reject the call if any are missing. `labels` is optional.
 
 Do NOT use `gh pr create` directly — the enforcement script exists to prevent skipping required parameters.
 

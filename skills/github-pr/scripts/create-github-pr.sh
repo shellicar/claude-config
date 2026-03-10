@@ -1,54 +1,61 @@
 #!/bin/sh
 set -e
 
-# create-github-pr.sh - Create a GitHub PR with enforced required parameters
+# create-github-pr.sh - Create a GitHub PR, reads JSON from stdin
 #
-# Usage: create-github-pr.sh --title "Title" --body "Body" --milestone "1.3" --assignee "@me" [--label "dependencies"]
+# Usage: jq -n '{...}' | create-github-pr.sh
 #
-# Required: --title, --body, --milestone, --assignee
-# Optional: --label (repeatable)
+# Input JSON fields:
+#   title     (required) - PR title
+#   body      (required) - PR body (multiline supported)
+#   milestone (required) - Milestone title
+#   assignee  (required) - Assignee (@me or username)
+#   labels    (optional) - Array of label names
 #
-# This script enforces that all required parameters are provided.
+# Example:
+#   jq -n '{
+#     title: "Fix login bug",
+#     body: "## Summary\n\n- Fix null pointer on login",
+#     milestone: "1.3",
+#     assignee: "@me",
+#     labels: ["bug"]
+#   }' | create-github-pr.sh
+#
+# This script enforces that all required fields are provided.
 # It wraps gh pr create to prevent ad-hoc calls that skip required fields.
 
-TITLE=""
-BODY=""
-MILESTONE=""
-ASSIGNEE=""
-LABEL_ARGS=""
+INPUT=$(cat)
 
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --title) TITLE="$2"; shift 2 ;;
-    --body) BODY="$2"; shift 2 ;;
-    --milestone) MILESTONE="$2"; shift 2 ;;
-    --assignee) ASSIGNEE="$2"; shift 2 ;;
-    --label) LABEL_ARGS="$LABEL_ARGS --label $2"; shift 2 ;;
-    *)
-      echo "Error: Unknown parameter: $1" >&2
-      echo "Usage: create-github-pr.sh --title \"Title\" --body \"Body\" --milestone \"1.3\" --assignee \"@me\" [--label \"label\"]" >&2
-      exit 1
-      ;;
-  esac
-done
+# Extract required fields
+TITLE=$(printf '%s' "$INPUT" | jq -r '.title // empty')
+BODY=$(printf '%s' "$INPUT" | jq -r '.body // empty')
+MILESTONE=$(printf '%s' "$INPUT" | jq -r '.milestone // empty')
+ASSIGNEE=$(printf '%s' "$INPUT" | jq -r '.assignee // empty')
 
-# Validate required parameters
+# Validate required fields
 MISSING=""
-[ -z "$TITLE" ] && MISSING="$MISSING --title"
-[ -z "$BODY" ] && MISSING="$MISSING --body"
-[ -z "$MILESTONE" ] && MISSING="$MISSING --milestone"
-[ -z "$ASSIGNEE" ] && MISSING="$MISSING --assignee"
+[ -z "$TITLE" ]     && MISSING="$MISSING title"
+[ -z "$BODY" ]      && MISSING="$MISSING body"
+[ -z "$MILESTONE" ] && MISSING="$MISSING milestone"
+[ -z "$ASSIGNEE" ]  && MISSING="$MISSING assignee"
 
 if [ -n "$MISSING" ]; then
-  echo "Error: Missing required parameters:$MISSING" >&2
-  echo "" >&2
-  echo "All of --title, --body, --milestone, --assignee are required." >&2
-  echo "Use the github-milestone skill to resolve the milestone before calling this script." >&2
+  printf 'Error: Missing required fields:%s\n' "$MISSING" >&2
+  printf 'All of title, body, milestone, assignee are required.\n' >&2
+  printf 'Use the github-milestone skill to resolve the milestone before calling this script.\n' >&2
   exit 1
 fi
 
+# Build label args from array
+LABEL_ARGS=""
+while IFS= read -r label; do
+  [ -n "$label" ] && LABEL_ARGS="$LABEL_ARGS --label $label"
+done <<LABELS
+$(printf '%s' "$INPUT" | jq -r '.labels[]? // empty')
+LABELS
+
 # Execute gh pr create
-# LABEL_ARGS intentionally unquoted to split into separate args
+# LABEL_ARGS intentionally unquoted to split into separate --label flags
 # shellcheck disable=SC2086
 gh pr create \
   --title "$TITLE" \
