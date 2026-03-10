@@ -33,20 +33,20 @@ Run the gather script to collect all PR-related state in one call:
 ~/.claude/skills/github-pr/scripts/github-pr-info.sh
 ```
 
-The script calls `detect-convention` internally and outputs `Convention: <name>` in the header.
+The script calls `detect-convention` internally.
 
-The script outputs structured sections: `BRANCH`, `DEFAULT_BRANCH`, `MERGED_PR`, `EXISTING_PR`, `ANCESTOR`, `COMMITS`, `MILESTONES`, `DIFFSTAT`.
+The script outputs a single JSON object with fields: `convention`, `branch`, `default_branch`, `merged_pr`, `existing_pr`, `ancestor`, `commits`, `milestones`, `diffstat`.
 
-After running the script, load the `<convention>-conventions` skill if `Convention:` is present in the output. If not present, proceed without convention-specific rules.
+After running the script, load the `<convention>-conventions` skill if `.convention` is non-null. If null, proceed without convention-specific rules.
 
 ### 2. Analyse the Gathered State
 
-From the script output, check the following — stop and inform the Supreme Commander if any fail:
+From the JSON output, check the following — stop and inform the Supreme Commander if any fail:
 
-- **On default branch**: If `BRANCH` equals `DEFAULT_BRANCH`, STOP — a PR cannot be created from the default branch.
-- **Already merged**: If `MERGED_PR` is not empty, STOP — the branch was already merged. Inform the Supreme Commander.
-- **Existing PR**: If `EXISTING_PR` is not empty, this is an update — use `gh pr edit` instead of creating a new PR.
-- **No commits**: If `COMMITS` is empty, STOP — there is nothing to create a PR for.
+- **On default branch**: If `.branch` equals `.default_branch`, STOP — a PR cannot be created from the default branch.
+- **Already merged**: If `.merged_pr` is non-empty, STOP — the branch was already merged. Inform the Supreme Commander.
+- **Existing PR**: If `.existing_pr` is non-null, this is an update — use `gh pr edit` instead of creating a new PR.
+- **No commits**: If `.commits` is empty (`[]`), STOP — there is nothing to create a PR for.
 
 ### 3. Create PR Content
 

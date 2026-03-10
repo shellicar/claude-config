@@ -23,23 +23,23 @@ Run the gather script to collect push state in one call:
 ~/.claude/skills/git-push/scripts/git-push-info.sh
 ```
 
-The script calls `detect-convention` internally and outputs `Convention: <name>` in the header.
+The script calls `detect-convention` internally.
 
-The script outputs structured sections: `BRANCH`, `PROTECTED_BRANCHES`, `HAS_UPSTREAM`, `COMMITS_TO_PUSH`, `DIVERGENCE`, `DIFFSTAT`.
+The script outputs a single JSON object with fields: `platform`, `project`, `convention`, `branch`, `protected_branches`, `open_pr`, `merged_pr`, `has_upstream`, `upstream`, `commits_to_push`, `divergence`, `commits_detail`.
 
-After running the script, load the `<convention>-conventions` skill if `Convention:` is present in the output. If not present, proceed without convention-specific rules.
+After running the script, load the `<convention>-conventions` skill if `.convention` is non-null. If null, proceed without convention-specific rules.
 
 ### 2. Analyse the gathered state
 
-From the script output, check the following — stop and inform the Supreme Commander if any fail:
+From the JSON output, check the following — stop and inform the Supreme Commander if any fail:
 
-- **Branch protection** *(check this first)*: If `BRANCH` appears in `PROTECTED_BRANCHES` (and `PROTECTED_BRANCHES` is not `none`), **STOP immediately** — direct pushes to this branch are not allowed. Inform the Supreme Commander and offer to create a branch or open a PR.
-- **No commits to push**: If `COMMITS_TO_PUSH` is empty, inform the Supreme Commander and stop.
-- **Divergence**: If `DIVERGENCE` shows behind count > 0, the branch has diverged — STOP and inform the Supreme Commander, as this may require manual intervention (rebase, merge, or force push).
+- **Branch protection** *(check this first)*: If `.branch` appears in `.protected_branches` (and the array is non-empty), **STOP immediately** — direct pushes to this branch are not allowed. Inform the Supreme Commander and offer to create a branch or open a PR.
+- **No commits to push**: If `.commits_to_push` is empty (`[]`), inform the Supreme Commander and stop.
+- **Divergence**: If `.divergence.behind > 0`, the branch has diverged — STOP and inform the Supreme Commander, as this may require manual intervention (rebase, merge, or force push).
 
 ### 3. Triage files for secret scanning
 
-Review the `DIFFSTAT` section. For each commit, identify files that need scanning vs files that can be skipped:
+Review `.commits_detail`. For each commit, identify files that need scanning vs files that can be skipped:
 
 **Skip** (no secret risk):
 - Lock files (`*.lock`, `package-lock.json`, `pnpm-lock.yaml`)

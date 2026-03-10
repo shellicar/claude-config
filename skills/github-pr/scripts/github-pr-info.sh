@@ -2,19 +2,31 @@
 set -e
 
 # github-pr-info.sh - Gather all PR-related state in one call
-# Consolidates branch check, merged PR, ancestor detection, and change summary
-# Replaces: git-context.sh, git-ancestor.sh, git-summary.sh
+# Outputs JSON that Claude can parse
+#
+# Output fields:
+#   convention     - detected convention name (null if none)
+#   branch         - current branch name
+#   default_branch - default branch (e.g. main)
+#   merged_pr      - array of merged PRs for this branch
+#   existing_pr    - open PR details object (null if none)
+#   ancestor       - merge base branch (epic branch or default branch)
+#   commits        - array of commits since ancestor (oneline strings)
+#   milestones     - array of repo milestones
+#   diffstat       - file-level change summary (string)
+
+# Ensure we're running from the git root regardless of caller's cwd
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
+  echo '{"error":"not in a git repository"}' >&2
+  exit 1
+}
+cd "$GIT_ROOT"
 
 # Detect convention (name, default branch, protected branches)
 DETECT_SCRIPT="$HOME/.claude/skills/detect-convention/scripts/detect-convention.sh"
 CONVENTION=""
 if [ -f "$DETECT_SCRIPT" ]; then
-  CONVENTION_OUTPUT=$("$DETECT_SCRIPT" 2>/dev/null || echo "")
-  CONVENTION=$(echo "$CONVENTION_OUTPUT" | sed -n '1p')
-fi
-
-if [ -n "$CONVENTION" ]; then
-  echo "Convention: $CONVENTION"
+  CONVENTION=$("$DETECT_SCRIPT" 2>/dev/null | sed -n '1p' || echo "")
 fi
 
 # Detect default branch
@@ -23,54 +35,65 @@ DEFAULT=${DEFAULT:-main}
 
 BRANCH=$(git branch --show-current)
 
-echo "--- BRANCH ---"
-echo "$BRANCH"
-
-echo ""
-echo "--- DEFAULT_BRANCH ---"
-echo "$DEFAULT"
-
-echo ""
-echo "--- MERGED_PR ---"
+# Merged PR
+MERGED_PR='[]'
 if [ "$BRANCH" != "$DEFAULT" ]; then
-  gh pr list --head "$BRANCH" --state merged --json number,title 2>/dev/null || echo "[]"
-else
-  echo "[]"
+  MERGED_PR=$(gh pr list --head "$BRANCH" --state merged --json number,title 2>/dev/null || echo '[]')
 fi
 
-echo ""
-echo "--- EXISTING_PR ---"
+# Existing (open) PR — rich query
+EXISTING_PR='null'
 if [ "$BRANCH" != "$DEFAULT" ]; then
-  gh pr list --head "$BRANCH" --state open --json number,title,url 2>/dev/null || echo "[]"
-else
-  echo "[]"
+  EXISTING_PR=$(gh pr list --head "$BRANCH" --state open \
+    --json number,title,url,isDraft,autoMergeRequest,mergeStateStatus,mergeable,reviewDecision,reviewRequests,milestone,labels,statusCheckRollup \
+    --jq 'if length > 0 then .[0] | {number,title,url,isDraft,mergeStateStatus,mergeable,reviewDecision,autoMergeRequest:.autoMergeRequest.mergeMethod,reviewRequests:[.reviewRequests[].login],milestone:.milestone.title,labels:[.labels[].name],checks:[.statusCheckRollup[]|{name,status,conclusion}]} else null end' \
+    2>/dev/null || echo 'null')
 fi
 
-echo ""
-echo "--- ANCESTOR ---"
+# Ancestor detection
 MERGE_BASE=$(git merge-base HEAD "origin/$DEFAULT" 2>/dev/null || true)
+ANCESTOR="origin/$DEFAULT"
 if [ -n "$MERGE_BASE" ]; then
   EPIC=$(git branch -r --contains "$MERGE_BASE" 2>/dev/null | grep "epic/" | head -1 | tr -d ' ')
   if [ -n "$EPIC" ]; then
-    echo "$EPIC"
     ANCESTOR="$EPIC"
-  else
-    echo "origin/$DEFAULT"
-    ANCESTOR="origin/$DEFAULT"
   fi
-else
-  echo "origin/$DEFAULT"
-  ANCESTOR="origin/$DEFAULT"
 fi
 
-echo ""
-echo "--- COMMITS ---"
-git log --oneline "$ANCESTOR..HEAD" 2>/dev/null || true
+# Commits
+COMMITS=$(git log --oneline "$ANCESTOR..HEAD" 2>/dev/null | jq -Rs 'split("\n") | map(select(. != ""))' || echo '[]')
 
-echo ""
-echo "--- MILESTONES ---"
-gh api repos/{owner}/{repo}/milestones --method GET -f state=all --jq '.[] | {number, title, state, open_issues, closed_issues}' 2>/dev/null || true
+# Milestones
+MILESTONES=$(gh api repos/{owner}/{repo}/milestones --method GET -f state=all \
+  --jq '[.[] | {number, title, state, open_issues, closed_issues}]' 2>/dev/null || echo '[]')
 
-echo ""
-echo "--- DIFFSTAT ---"
-git diff "$ANCESTOR...HEAD" --stat 2>/dev/null || true
+# Changed files (numstat: binary files use null for counts)
+DIFFSTAT=$(git diff "$ANCESTOR...HEAD" --numstat 2>/dev/null \
+  | jq -Rs '[split("\n")[] | select(. != "") | split("\t") | {
+      insertions: (.[0] | if . == "-" then null else tonumber end),
+      deletions:  (.[1] | if . == "-" then null else tonumber end),
+      path: .[2]
+    }]' || echo '[]')
+
+# Build JSON
+jq -n \
+  --arg convention "$CONVENTION" \
+  --arg branch "$BRANCH" \
+  --arg default_branch "$DEFAULT" \
+  --argjson merged_pr "$MERGED_PR" \
+  --argjson existing_pr "$EXISTING_PR" \
+  --arg ancestor "$ANCESTOR" \
+  --argjson commits "$COMMITS" \
+  --argjson milestones "$MILESTONES" \
+  --argjson diffstat "$DIFFSTAT" \
+  '{
+    convention: (if $convention == "" then null else $convention end),
+    branch: $branch,
+    default_branch: $default_branch,
+    merged_pr: $merged_pr,
+    existing_pr: $existing_pr,
+    ancestor: $ancestor,
+    commits: $commits,
+    milestones: $milestones,
+    diffstat: $diffstat
+  }'

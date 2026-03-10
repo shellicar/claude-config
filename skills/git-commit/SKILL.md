@@ -23,20 +23,20 @@ Run the gather script to collect all git state in one call:
 ~/.claude/skills/git-commit/scripts/git-commit-info.sh
 ```
 
-The script auto-detects the platform (GitHub or Azure DevOps) and project name from `git remote get-url origin`. It also calls `detect-convention` internally and outputs `Convention: <name>` in the header.
+The script auto-detects the platform (GitHub or Azure DevOps) and project name from `git remote get-url origin`. It also calls `detect-convention` internally.
 
-The script outputs structured sections: `BRANCH`, `PROTECTED_BRANCHES`, `MERGED_PR`, `STAGED_STAT`, `STATUS`, `RECENT_LOG`.
+The script outputs a single JSON object with fields: `platform`, `project`, `convention`, `branch`, `protected_branches`, `open_pr`, `merged_pr`, `staged_files`, `status`, `recent_log`.
 
-After running the script, load the `<convention>-conventions` skill if `Convention:` is present in the output. If not present, proceed without convention-specific rules.
+After running the script, load the `<convention>-conventions` skill if `.convention` is non-null. If null, proceed without convention-specific rules.
 
 ### 2. Analyse the gathered state
 
-From the script output, check the following — stop and inform the Supreme Commander if any fail:
+From the JSON output, check the following — stop and inform the Supreme Commander if any fail:
 
-- **Branch protection** *(check this first)*: If `BRANCH` appears in `PROTECTED_BRANCHES` (and `PROTECTED_BRANCHES` is not `none`), **STOP immediately** — do not proceed. Inform the Supreme Commander that direct commits to this branch are not allowed, and offer to create a new branch.
-- **Merged PR**: If `MERGED_PR` shows a completed PR for this branch, STOP — the branch was already merged.
-- **No staged changes**: If `STAGED_STAT` is empty, inform the Supreme Commander.
-- **Unstaged/untracked changes**: If `STATUS` shows unstaged or untracked files, show the Supreme Commander and use `AskUserQuestion` with options like "Stage them", "Leave unstaged". If files are staged, re-run the gather script after staging to get the updated diff.
+- **Branch protection** *(check this first)*: If `.branch` appears in `.protected_branches` (and the array is non-empty), **STOP immediately** — do not proceed. Inform the Supreme Commander that direct commits to this branch are not allowed, and offer to create a new branch.
+- **Merged PR**: If `.merged_pr` is non-empty, STOP — the branch was already merged.
+- **No staged changes**: If `.staged_files` is empty (`[]`), inform the Supreme Commander.
+- **Unstaged/untracked changes**: If `.status.unstaged` or `.status.untracked` is non-empty, show the Supreme Commander and use `AskUserQuestion` with options like "Stage them", "Leave unstaged". If files are staged, re-run the gather script after staging to get the updated diff.
 
 **Gitignored file check**: If you edited any files during this conversation, verify they are visible to git. Run `git check-ignore <file-path>` for any files you changed that don't appear in the status. If ignored, warn the Supreme Commander.
 
