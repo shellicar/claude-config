@@ -1,6 +1,9 @@
 ---
 name: github-release
-description: Create a GitHub release to trigger npm publish. Use when publishing a release, cutting a new version, or releasing to npm.
+description: >
+  Create a GitHub release to trigger npm publish.
+  TRIGGER when: publishing a release, cutting a new version, or releasing to npm.
+  DO NOT TRIGGER when: querying release status, monitoring existing releases, or non-release operations.
 user-invocable: true
 ---
 
@@ -54,18 +57,16 @@ Run the gather script to check all preconditions in one call:
 ~/.claude/skills/github-release/scripts/github-release-info.sh
 ```
 
-The script calls `detect-convention` internally and outputs `Convention: <name>` in the header. Must be a GitHub repo (`shellicar` or `shellicar-oss` convention) — stop if convention is missing or does not match.
-
-The script outputs structured sections: `REPO`, `BRANCH`, `WORKING_TREE`, `VERSION`, `CHANGELOG`, `MILESTONE`, `EXISTING`.
+The script outputs JSON. Key fields: `convention`, `owner`, `repo`, `branch`, `working_tree`, `version`, `changelog`, `main_sha`, `milestones`, `existing_release`. Must be a GitHub repo (`shellicar` or `shellicar-oss` convention) — stop if convention is missing or does not match.
 
 ### 2. Analyse the gathered state
 
 From the script output, check the following — stop and inform the Supreme Commander if any fail:
 
-- **Branch**: Must be on `main`
 - **Working tree**: Must be clean
 - **Version**: Must be found in package.json
 - **CHANGELOG**: Must contain an entry for the version
+- **main_sha**: Must be non-empty — if empty, `origin/main` could not be resolved (PR may not be merged yet)
 - **Milestone**: Should exist for the version (warn if missing, don't block)
 - **Existing release**: If a release already exists, STOP — inform the Supreme Commander
 
@@ -82,14 +83,18 @@ Detect whether the version is a pre-release by checking for a hyphen (e.g., `1.0
 
 ```bash
 # @shellicar convention: no 'v' prefix
+# Always target the exact merge commit SHA from origin/main
+
 # Stable release:
 gh release create "${VERSION}" \
   --title "${VERSION}" \
+  --target "${MAIN_SHA}" \
   --generate-notes
 
 # Pre-release (version contains a hyphen):
 gh release create "${VERSION}" \
   --title "${VERSION}" \
+  --target "${MAIN_SHA}" \
   --generate-notes \
   --prerelease
 ```
@@ -120,7 +125,7 @@ Run the status script to check workflow, npm, and milestone:
 ~/.claude/skills/github-release/scripts/github-release-status.sh "${VERSION}"
 ```
 
-The script outputs structured sections: `WORKFLOW`, `NPM`, `MILESTONE`.
+The script outputs JSON. Key fields: `version`, `workflow` (latest npm-publish run or null), `npm` ({package, latest, published}), `milestones`.
 
 From the output:
 

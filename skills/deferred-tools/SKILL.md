@@ -1,9 +1,9 @@
 ---
 name: deferred-tools
 description: >
-  Rules for using deferred MCP tools. Apply whenever calling any tool listed in
-  the available-deferred-tools section. TRIGGER: before calling any MCP tool,
-  especially ctx_batch_execute, ctx_execute, ctx_search, or any mcp__* tool.
+  Rules for using deferred MCP tools.
+  TRIGGER when: calling any tool listed in the available-deferred-tools section, especially ctx_batch_execute, ctx_execute, ctx_search, or any mcp__* tool.
+  DO NOT TRIGGER when: calling core always-loaded tools (Bash, Read, Edit, Write, Glob, Grep, Agent, Skill, ToolSearch).
 ---
 
 # Deferred Tools

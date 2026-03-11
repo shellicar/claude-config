@@ -13,6 +13,7 @@
 #   version         - version from package.json (monorepo-aware)
 #   changelog       - "found" or "missing"
 #   milestones      - array of open milestone objects
+#   main_sha         - HEAD commit SHA of origin/main (used as --target for release)
 #   existing_release - release object if exists, else null
 
 set -e
@@ -21,7 +22,7 @@ set -e
 DETECT_SCRIPT="$HOME/.claude/skills/detect-convention/scripts/detect-convention.sh"
 CONVENTION=""
 if [ -f "$DETECT_SCRIPT" ]; then
-  CONVENTION=$(("$DETECT_SCRIPT" 2>/dev/null || echo '{}') | jq -r '.convention // ""')
+  CONVENTION=$( ("$DETECT_SCRIPT" 2>/dev/null || echo '{}') | jq -r '.convention // ""')
 fi
 
 # Repo owner/name from git remote
@@ -60,6 +61,9 @@ if [ -f CHANGELOG.md ]; then
   fi
 fi
 
+# HEAD SHA of origin/main
+MAIN_SHA=$(git ls-remote origin refs/heads/main 2>/dev/null | cut -f1)
+
 # Open milestones
 MILESTONES=$(gh api "repos/$OWNER/$REPO/milestones" \
   --jq '[.[] | {title: .title, number: .number, open_issues: .open_issues, closed_issues: .closed_issues}]' \
@@ -83,6 +87,7 @@ jq -n \
   --arg working_tree "$WORKING_TREE" \
   --arg version "${VERSION:-}" \
   --arg changelog "$CHANGELOG_STATUS" \
+  --arg main_sha "${MAIN_SHA:-}" \
   --argjson milestones "$MILESTONES" \
   --argjson existing_release "$EXISTING_RELEASE" \
-  '{convention: $convention, owner: $owner, repo: $repo, branch: $branch, working_tree: $working_tree, version: $version, changelog: $changelog, milestones: $milestones, existing_release: $existing_release}'
+  '{convention: $convention, owner: $owner, repo: $repo, branch: $branch, working_tree: $working_tree, version: $version, changelog: $changelog, main_sha: $main_sha, milestones: $milestones, existing_release: $existing_release}'
