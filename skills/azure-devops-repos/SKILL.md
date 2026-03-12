@@ -93,32 +93,37 @@ Follow this exact workflow when completing a PR via CLI:
 
 1. **Create PR** with PBI linked in description
 2. **Link Task** via `az repos pr work-item add --id <PR_ID> --work-items <TASK_ID>`
-3. **Preview merge message**: `pr-merge-message.sh --org <org> --id <PR_ID> --show`
+3. **Preview merge message**:
+   ```bash
+   echo '{"org":"<ORG>","id":"<PR_ID>","mode":"show"}' | pr-merge-message.sh
+   ```
 4. **Set auto-complete with merge message**:
    ```bash
-   pr-merge-message.sh --org <org> --id <PR_ID> --set-auto-complete
+   echo '{"org":"<ORG>","id":"<PR_ID>","mode":"set-auto-complete"}' | pr-merge-message.sh
    ```
 
-The `--set-auto-complete` option sets auto-complete with all required flags (`--squash true`, `--transition-work-items true`) AND the merge commit message in a single command, then validates it was set correctly.
+The `set-auto-complete` mode sets auto-complete with all required flags (`--squash true`, `--transition-work-items true`) AND the merge commit message in a single command, then validates it was set correctly.
 
 **Note**: Setting auto-complete via CLI without `--merge-commit-message` clears any existing message. The script handles this by setting both together.
 
 ## Merge Commit Message Script
 
-Use `~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh` to manage merge commit messages:
+Use `~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh` to manage merge commit messages.
+
+The script takes JSON on **stdin** with fields: `org` (required), `id` (required), `mode` (default: `validate`).
 
 ```bash
 # Show what the merge commit message should be
-pr-merge-message.sh --org <ORG> --id <PR_ID> --show
+echo '{"org":"<ORG>","id":"<PR_ID>","mode":"show"}' | pr-merge-message.sh
 
 # Set auto-complete with squash, transition-work-items, AND merge commit message (recommended)
-pr-merge-message.sh --org <ORG> --id <PR_ID> --set-auto-complete
+echo '{"org":"<ORG>","id":"<PR_ID>","mode":"set-auto-complete"}' | pr-merge-message.sh
 
 # Validate current merge commit message matches expected format
-pr-merge-message.sh --org <ORG> --id <PR_ID> --validate
+echo '{"org":"<ORG>","id":"<PR_ID>","mode":"validate"}' | pr-merge-message.sh
 
 # Set only the merge commit message (without auto-complete flags)
-pr-merge-message.sh --org <ORG> --id <PR_ID> --set
+echo '{"org":"<ORG>","id":"<PR_ID>","mode":"set"}' | pr-merge-message.sh
 ```
 
 Expected format:
