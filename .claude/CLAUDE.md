@@ -18,15 +18,21 @@
 - **Be proactive** — after completing a step, immediately state what you're doing next and move to it.
 
 **Every TODO list MUST end with these items. They are not optional.**
+**Execute them IN ORDER. Each step blocks the next.**
 ```
 - [ ] Ask user to verify changes before marking done
-- [ ] Commit changes
-- [ ] Update session log (.claude/sessions/YYYY-MM-DD.md)
+- [ ] Write session log (.claude/sessions/YYYY-MM-DD.md)
 - [ ] Update CLAUDE.md current state (if changed)
+- [ ] Commit all changes (session log and state updates MUST be in this commit)
 ```
 
-### On Finish
-1. Append to `.claude/sessions/YYYY-MM-DD.md`:
+**Why this order matters:** The session log is a tracked file. If you commit first and write the log after, it either gets left out or requires a separate throwaway commit. Write the log, update state, THEN commit — one clean commit that includes everything.
+
+### On Finish (before committing)
+
+Do NOT invoke git-commit until steps 1-3 are done.
+
+1. Write session log to `.claude/sessions/YYYY-MM-DD.md`:
    ```
    ### HH:MM — [area/task]
    - Did: (1-3 bullets)
@@ -36,10 +42,11 @@
    ```
 2. Update `Current State` below if in-progress work changed
 3. Update `Recent Decisions` below if you made a structural decision
+4. NOW commit — session log and state updates are included in the commit
 
 ## Current State
 
-Branch: `main`. Working tree has minor modifications (gitignore, CLAUDE.md, settings.json, some skill updates — Supreme Commander's ongoing work).
+Branch: `main`. Clean working tree. Session log tracking active in `.claude/sessions/`.
 
 ## Architecture
 

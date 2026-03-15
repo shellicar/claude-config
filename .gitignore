@@ -31,3 +31,4 @@ context-mode/
 # Claude harness — Stage 2
 !.claude/*/
 !.claude/**/*.md
+audit/
