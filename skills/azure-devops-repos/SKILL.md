@@ -52,30 +52,29 @@ EOF
 }
 EOF
 
-# Link work items to PR
-~/.claude/skills/azure-devops/scripts/ado-rest.sh << 'EOF'
-{
-  "org": "{org}", "project": "{project}", "method": "PATCH",
-  "path": "wit/workitems/{wi-id}", "params": {"api-version": "7.1"},
-  "headers": {"Content-Type": "application/json-patch+json"},
-  "body": [{"op": "add", "path": "/relations/-", "value": {"rel": "ArtifactLink", "url": "vstfs:///Git/PullRequestId/{project-id}%2F{repo-id}%2F{pr-id}", "attributes": {"name": "Pull Request"}}}]
-}
-EOF
+# Link work items (tasks) to PR
+az repos pr work-item add --id <PR_ID> --work-items <TASK_ID> --org https://dev.azure.com/{org}
 ```
 
 ## Linking Work Items to PRs
 
-- **PBI**: Link in the PR description using `#1234` syntax (auto-linked by Azure DevOps)
-- **Tasks**: Link via REST API (see work item linking example above)
+There are two types of work items linked to a PR. They use **different mechanisms**. Getting this wrong causes the wrong work items to appear in the "Related Work Items" section of the PR.
 
-This keeps the description clean while still associating all related work.
+| Work item type | Where it goes | How to link |
+|----------------|---------------|-------------|
+| **PBI or Bug** (the parent) | PR description — `## Related Work Items` section | `#1234` syntax in the description text. Azure DevOps auto-links it. |
+| **Task** (the child you created for this work) | Linked to the PR via CLI | `az repos pr work-item add --id <PR_ID> --work-items <TASK_ID>` |
+
+**CRITICAL**: Only the PBI/Bug goes in the description. The Task does **NOT** go in the description. The `#1234` syntax auto-links any work item it touches, so putting the Task ID in the description causes it to appear as a related work item instead of a properly linked task. This is the wrong result.
+
+**The rule**: mention the parent (PBI/Bug), link the child (Task) via API. Never put Task IDs in the PR description.
 
 ## PR Completion Workflow
 
 Follow this exact workflow when completing a PR via CLI:
 
-1. **Create PR** with PBI linked in description
-2. **Link Task** via `az repos pr work-item add --id <PR_ID> --work-items <TASK_ID>`
+1. **Create PR** with PBI/Bug mentioned in description (`#1234` in `## Related Work Items` section). Do NOT include Task IDs in the description.
+2. **Link Task** to the PR: `az repos pr work-item add --id <PR_ID> --work-items <TASK_ID> --org https://dev.azure.com/{org}`
 3. **Preview merge message**:
    ```bash
    echo '{"org":"<ORG>","id":"<PR_ID>","mode":"show"}' | pr-merge-message.sh
@@ -145,4 +144,4 @@ Work item links (`#1234`) render with full metadata (title, status badge). For c
 
 ## Work Item Linking
 
-Work items are automatically linked when referenced in PR description with `#1234` syntax.
+The `#1234` syntax in a PR description auto-links any referenced work item. This is why only the parent (PBI/Bug) goes in the description. Putting a Task ID in the description causes it to appear as a "Related Work Item" in the sidebar, which is the wrong linking mechanism for tasks.
