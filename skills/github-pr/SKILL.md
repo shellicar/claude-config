@@ -1,7 +1,11 @@
 ---
 name: github-pr
-description: "Create or update a GitHub pull request with a summary of changes.\nTRIGGER when: creating PRs, updating PRs, pushing for review, or asked to open a PR on GitHub.\nDO NOT TRIGGER when: reading PR status, exploring PR history, or non-PR git operations."
-allowed-tools: Bash(~/.claude/skills/github-pr/scripts/*)
+description: |
+ Manages the full GitHub PR lifecycle: creation checks, content format, milestone, auto-merge, and post-merge cleanup. Without it, PRs miss required fields and branches aren't cleaned up after merge.
+ TRIGGER when creating or updating GitHub PRs.
+ DO NOT TRIGGER for PR status reads, ADO PR operations, or non-PR git operations.
+metadata:
+  category: workflow
 ---
 
 # GitHub PR Workflow

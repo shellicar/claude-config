@@ -1,10 +1,12 @@
 ---
 name: github-release
-description: >
-  Create a GitHub release to trigger npm publish.
-  TRIGGER when: publishing a release, cutting a new version, or releasing to npm.
-  DO NOT TRIGGER when: querying release status, monitoring existing releases, or non-release operations.
+description: |
+ Runs the full GitHub release sequence for @shellicar npm packages: precondition checks, release creation, note review, and npm publish monitoring. Without it, releases can run from the wrong commit, miss CHANGELOG entries, or duplicate existing tags.
+ TRIGGER when publishing a release or cutting a new version.
+ DO NOT TRIGGER for querying release status or non-release operations.
 user-invocable: true
+metadata:
+  category: workflow
 ---
 
 # GitHub Release

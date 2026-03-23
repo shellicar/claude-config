@@ -1,7 +1,12 @@
 ---
 name: github-repos
-description: GitHub repository settings and ruleset configuration. Use when configuring repo features (wiki, issues, projects), merge settings (auto-merge, delete branch on merge), or branch rulesets. Also use when auditing or verifying repo configuration against convention standards.
+description: |
+ Applies convention-driven GitHub repo settings and branch rulesets: merge methods, branch protection, code scanning, and auto-merge. Without it, wrong merge methods are available, force pushes succeed, and required checks can be bypassed.
+ TRIGGER when configuring repo features, merge settings, or branch rulesets.
+ DO NOT TRIGGER for PR creation or release operations.
 user-invocable: true
+metadata:
+  category: workflow
 ---
 
 # GitHub Repository Configuration

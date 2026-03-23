@@ -1,6 +1,11 @@
 ---
 name: github-version
-description: Determine next version and update CHANGELOG for @shellicar npm packages. Use when bumping versions, preparing a release, or updating the changelog.
+description: |
+ Determines the next semver version, updates CHANGELOG.md, and bumps package.json for @shellicar packages. Without it, version numbers drift between package.json, CHANGELOG, and tags, and security fixes get wrong semver bump types.
+ TRIGGER when bumping versions, preparing a release, or updating the changelog.
+ DO NOT TRIGGER for non-release tasks.
+metadata:
+  category: workflow
 ---
 
 # GitHub Version Management

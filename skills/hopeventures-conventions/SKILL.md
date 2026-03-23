@@ -1,7 +1,12 @@
 ---
 name: hopeventures-conventions
-description: Git conventions for Hope Ventures on Azure DevOps. Loaded when detected as the active convention.
+description: |
+ Git branching, commit, and PR conventions for Hope Ventures Azure DevOps projects. Without it, branch names miss the required area segment and work item links go in the wrong place.
+ TRIGGER when committing, pushing, or creating PRs in a Hope Ventures project.
+ DO NOT TRIGGER for non-Hope Ventures projects.
 user-invocable: false
+metadata:
+  category: standards
 ---
 
 # Hope Ventures Conventions
