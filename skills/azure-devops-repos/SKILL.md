@@ -1,24 +1,11 @@
 ---
 name: azure-devops-repos
-description: "PRs and merge workflows in Azure DevOps.\nTRIGGER when: creating PRs, updating PRs, setting auto-complete, linking work items to PRs, or configuring merge commit messages.\nDO NOT TRIGGER when: configuring branch policies, querying project structure, formatting work item descriptions, or non-PR git operations."
+description: "Reference for Azure DevOps PR operations: CLI commands, work item linking rules, merge commit messages, and markdown formatting.\nLoaded by azure-devops-pr for workflow steps.\nTRIGGER when managing or querying existing PRs.\nDO NOT TRIGGER when creating a new PR. Load azure-devops-pr instead."
 ---
 
 # Azure DevOps Repos
 
-**Scope:** CLI commands for Azure DevOps PRs — CRUD, auto-complete, work item linking, merge commit messages, and PR markdown formatting. Branch policies live in `azure-devops-config`.
-
-Pull requests, work item linking, and merge workflows. See also `azure-devops-boards` for work item hierarchy and formatting.
-
-## When Invoked
-
-If the user invokes this skill, they likely want help with:
-- **Creating** PRs with proper descriptions and work item links
-- **Managing** PRs (updating, reviewing, completing)
-- **Auto-complete** setup with merge commit messages
-
-For branch policies, see `azure-devops-config`.
-
-Ask what they need help with if not clear from context.
+**Scope:** CLI command reference for Azure DevOps PRs. For the PR creation and completion workflow, see `azure-devops-pr`. Branch policies live in `azure-devops-config`.
 
 ## Pull Requests
 
@@ -68,25 +55,6 @@ There are two types of work items linked to a PR. They use **different mechanism
 **CRITICAL**: Only the PBI/Bug goes in the description. The Task does **NOT** go in the description. The `#1234` syntax auto-links any work item it touches, so putting the Task ID in the description causes it to appear as a related work item instead of a properly linked task. This is the wrong result.
 
 **The rule**: mention the parent (PBI/Bug), link the child (Task) via API. Never put Task IDs in the PR description.
-
-## PR Completion Workflow
-
-Follow this exact workflow when completing a PR via CLI:
-
-1. **Create PR** with PBI/Bug mentioned in description (`#1234` in `## Related Work Items` section). Do NOT include Task IDs in the description.
-2. **Link Task** to the PR: `az repos pr work-item add --id <PR_ID> --work-items <TASK_ID> --org https://dev.azure.com/{org}`
-3. **Preview merge message**:
-   ```bash
-   echo '{"org":"<ORG>","id":"<PR_ID>","mode":"show"}' | pr-merge-message.sh
-   ```
-4. **Set auto-complete with merge message**:
-   ```bash
-   echo '{"org":"<ORG>","id":"<PR_ID>","mode":"set-auto-complete"}' | pr-merge-message.sh
-   ```
-
-The `set-auto-complete` mode sets auto-complete with all required flags (`--squash true`, `--transition-work-items true`) AND the merge commit message in a single command, then validates it was set correctly.
-
-**Note**: Setting auto-complete via CLI without `--merge-commit-message` clears any existing message. The script handles this by setting both together.
 
 ## Merge Commit Message Script
 
