@@ -1,6 +1,10 @@
 ---
 name: deferred-tools
-description: "Ensures deferred MCP tools are fetched via ToolSearch before use. Without this, tool calls fail. Deferred tools have no schema until fetched.\nTRIGGER when calling any mcp__* tool or tool listed in the deferred tools section.\nDO NOT TRIGGER for core always-loaded tools (Bash, Read, Edit, Write, Glob, Grep)."
+description: |
+  WHAT: Rule for using deferred MCP tools: always call ToolSearch first to load the schema.
+  WHY: Prevents tool calls failing with Zod parse errors from incorrectly typed parameters.
+  WHEN: TRIGGER when calling any mcp__* tool or tool listed in the deferred tools section.
+  DO NOT TRIGGER for core always-loaded tools (Read, Write, Edit, etc).
 metadata:
   category: foundational
 ---

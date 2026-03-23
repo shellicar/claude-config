@@ -1,6 +1,8 @@
 ---
 name: eagers-conventions
-description: "Git branching, commit, PR, and work item conventions for Eagers Automotive Azure DevOps projects. Without it, branch strategy violations and work item hierarchy errors go undetected.\nTRIGGER when committing, pushing, or creating PRs in an Eagers Automotive project.\nDO NOT TRIGGER for non-Eagers projects."
+description: |
+  WHAT: Git branch, commit, PR, and work item conventions for Eagers Automotive.
+  WHEN: TRIGGER when detected as the active eagers convention.
 user-invocable: false
 metadata:
   category: standards

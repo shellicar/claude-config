@@ -1,6 +1,10 @@
 ---
 name: eagers-branding
-description: "Enforces correct casing and naming for Eagers Automotive sub-brands. Wrong brand names reach customers.\nTRIGGER when writing text, code, or docs referencing easyauto123, easypass, easydocs, or other easy-prefixed brands.\nDO NOT TRIGGER for non-Eagers work."
+description: |
+  WHAT: Enforces correct casing and naming for Eagers Automotive sub-brands.
+  WHY: Wrong brand names reach customers.
+  WHEN: TRIGGER when writing text, code, or docs referencing easyauto123, easypass, easydocs, or other easy-prefixed brands.
+  DO NOT TRIGGER for non-Eagers work.
 user-invocable: false
 metadata:
   category: standards

@@ -1,6 +1,8 @@
 ---
 name: flightrac-conventions
-description: "Enforces Flightrac commit message format, branch naming, and PR conventions on Azure DevOps. Without it, commits and PRs drift from Flightrac's agreed patterns.\nTRIGGER when committing, pushing, or creating PRs in a Flightrac project.\nDO NOT TRIGGER for non-Flightrac projects."
+description: |
+  WHAT: Git branch, commit, and PR conventions for Flightrac.
+  WHEN: TRIGGER when detected as the active flightrac convention.
 user-invocable: false
 metadata:
   category: standards
