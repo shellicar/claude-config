@@ -35,11 +35,14 @@ printf '{"displayName":"%s","scope":"%s"}' "$PAT_NAME" "$SCOPES" > "$BODY_FILE"
 
 echo "✅ Creating PAT '$PAT_NAME' in organisation '$ORG'" >&2
 
-TOKEN=$("$SCRIPT_DIR/ado-rest.sh" \
+TOKEN=$(az rest \
   --method POST \
-  --path "https://vssps.dev.azure.com/$ORG/_apis/Tokens/Pats" \
-  --param 'api-version=6.1-preview' \
-  -- --headers 'Content-Type=application/json' --body "@$BODY_FILE" --query "patToken.token" --output tsv)
+  --uri "https://vssps.dev.azure.com/$ORG/_apis/Tokens/Pats?api-version=6.1-preview" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --body "@$BODY_FILE" \
+  --headers "Content-Type=application/json" \
+  --query "patToken.token" \
+  --output tsv)
 
 if [ -z "$TOKEN" ]; then
   echo "❌ Failed to create PAT in organisation '$ORG'" >&2
