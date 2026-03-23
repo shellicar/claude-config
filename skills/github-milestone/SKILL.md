@@ -1,6 +1,9 @@
 ---
 name: github-milestone
-description: "Attaches version milestones to PRs so releases track correctly. Missing milestones break the release workflow.\nTRIGGER when creating PRs, attaching milestones, or managing milestone state."
+description: |
+  WHAT: Workflow for selecting, creating, and attaching the right milestone version to PRs and issues.
+  WHY: Missing or misattached milestones break release tracking.
+  WHEN: TRIGGER when creating PRs or issues, attaching milestones, or managing milestone state.
 metadata:
   category: workflow
 ---

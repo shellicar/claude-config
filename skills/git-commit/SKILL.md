@@ -1,6 +1,10 @@
 ---
 name: git-commit
-description: "Enforces the commit sequence: branch check, staged file review, secret scanning, and message format. Skipping causes commits to the wrong branch or wrong files - both require serious cleanup to undo.\nTRIGGER when committing changes or staging files.\nDO NOT TRIGGER for reading status or exploring history."
+description: |
+  WHAT: Enforces the commit sequence: branch check, staged file review, secret scanning, and message format.
+  WHY: Skipping steps causes commits to the wrong branch or wrong files, both of which require serious cleanup to undo.
+  WHEN: TRIGGER when committing changes or staging files.
+  DO NOT TRIGGER for reading status or exploring history.
 metadata:
   category: workflow
 ---

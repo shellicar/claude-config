@@ -1,6 +1,9 @@
 ---
 name: git-knowledge
-description: "Corrects common git mental model errors before they cause data loss or unexpected working tree state.\nTRIGGER before switching branches, rebasing, stashing, or any operation that modifies commit history or working tree state.\nDO NOT TRIGGER for read-only operations like log or status."
+description: |
+  WHAT: Reference for how git actually works: the three states, when stashing is and isn't needed, and what uncommitted files can and cannot affect.
+  WHY: Common misconceptions lead to unnecessary stashes, pre-emptive staging, and occasionally destructive operations that weren't needed.
+  WHEN: TRIGGER before switching branches, rebasing, stashing, or any operation that modifies working tree state.
 user-invocable: false
 metadata:
   category: reference

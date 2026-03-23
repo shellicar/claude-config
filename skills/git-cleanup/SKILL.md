@@ -1,6 +1,9 @@
 ---
 name: git-cleanup
-description: "Identifies and removes stale local branches, including squash-merged ones that git --merged cannot detect.\nTRIGGER after merging PRs or when branches have accumulated.\nDO NOT TRIGGER for active feature work."
+description: |
+  WHAT: Workflow for identifying and safely deleting stale local branches, including squash-merged ones that git --merged cannot detect.
+  WHY: Squash-merged branches look unmerged to git, causing them to accumulate with no clear path to confirm they are safe to delete.
+  WHEN: TRIGGER after merging PRs or when branches have accumulated.
 metadata:
   category: workflow
 ---

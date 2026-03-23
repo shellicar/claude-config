@@ -1,6 +1,10 @@
 ---
 name: git-push
-description: "Gates pushes behind branch protection, divergence, and upstream checks, ensuring code reaches the right branch. Without it, commits reach stale branches, protected branches, or remote history with secrets permanently embedded.\nTRIGGER when pushing commits to remote.\nDO NOT TRIGGER for local-only operations."
+description: |
+  WHAT: Gates pushes behind branch protection, divergence, upstream, and secret scanning checks.
+  WHY: Prevents commits reaching the wrong branch or remote history with secrets permanently embedded.
+  WHEN: TRIGGER when pushing commits to remote.
+  DO NOT TRIGGER for local-only operations.
 metadata:
   category: workflow
 ---
