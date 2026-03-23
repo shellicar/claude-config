@@ -1,7 +1,9 @@
 ---
 name: git-knowledge
-description: "Git mental model and common misconceptions.\nTRIGGER when: any git operation — switching branches, stashing, staging, working with uncommitted changes, or reasoning about working tree state.\nDO NOT TRIGGER when: refactoring existing tests, reviewing code, or exploratory changes."
+description: "Corrects common git mental model errors before they cause data loss or unexpected working tree state.\nTRIGGER before switching branches, rebasing, stashing, or any operation that modifies commit history or working tree state.\nDO NOT TRIGGER for read-only operations like log or status."
 user-invocable: false
+metadata:
+  category: reference
 ---
 
 # Git Knowledge

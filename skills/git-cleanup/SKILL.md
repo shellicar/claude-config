@@ -1,6 +1,8 @@
 ---
 name: git-cleanup
-description: Analyze and clean up local git branches. Use when branches have accumulated, after merging PRs, or when cleaning up stale branches.
+description: "Identifies and removes stale local branches, including squash-merged ones that git --merged cannot detect.\nTRIGGER after merging PRs or when branches have accumulated.\nDO NOT TRIGGER for active feature work."
+metadata:
+  category: workflow
 ---
 
 # Git Cleanup: Local Branch Analysis and Cleanup

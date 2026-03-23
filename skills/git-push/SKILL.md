@@ -1,6 +1,8 @@
 ---
 name: git-push
-description: "Push commits to remote with secret and PII scanning.\nTRIGGER when: pushing code, after committing, before creating a PR, or asked to push.\nDO NOT TRIGGER when: reading git status, exploring history, or non-push git operations."
+description: "Gates pushes behind branch protection, divergence, and upstream checks, ensuring code reaches the right branch. Without it, commits reach stale branches, protected branches, or remote history with secrets permanently embedded.\nTRIGGER when pushing commits to remote.\nDO NOT TRIGGER for local-only operations."
+metadata:
+  category: workflow
 ---
 
 # Git Push Workflow

@@ -1,6 +1,8 @@
 ---
 name: git-commit
-description: "Create a git commit with a concise message.\nTRIGGER when: committing changes, asked to commit, after completing a task, or staging files for commit.\nDO NOT TRIGGER when: reading git status, exploring history, or non-commit git operations."
+description: "Enforces the commit sequence: branch check, staged file review, secret scanning, and message format. Skipping causes commits to the wrong branch or wrong files - both require serious cleanup to undo.\nTRIGGER when committing changes or staging files.\nDO NOT TRIGGER for reading status or exploring history."
+metadata:
+  category: workflow
 ---
 
 # Git Commit Workflow

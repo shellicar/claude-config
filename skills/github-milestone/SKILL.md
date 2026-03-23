@@ -1,6 +1,8 @@
 ---
 name: github-milestone
-description: "Manage GitHub milestones for version tracking.\nTRIGGER when: creating PRs, attaching milestones to PRs, creating/finding/closing milestones, or any workflow involving version tracking.\nDO NOT TRIGGER when: general GitHub operations that don't involve milestones."
+description: "Attaches version milestones to PRs so releases track correctly. Missing milestones break the release workflow.\nTRIGGER when creating PRs, attaching milestones, or managing milestone state."
+metadata:
+  category: workflow
 ---
 
 # GitHub Milestones
