@@ -1,8 +1,13 @@
 ---
 name: cli-tools
-description: Conventions for running CLI commands via the Bash tool. Apply when executing shell commands, using az rest, gh, or other CLI tools.
+description: "DEPRECATED. Replaced by mcp-shellicar.\nTRIGGER never."
 user-invocable: false
+metadata:
+  category: foundational
+  deprecated: mcp-shellicar
 ---
+
+> **DEPRECATED**: Replaced by `mcp-shellicar`. Do not load this skill.
 
 # CLI Tool Conventions
 

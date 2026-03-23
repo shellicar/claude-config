@@ -1,6 +1,8 @@
 ---
 name: azure-devops-repos
-description: "Reference for Azure DevOps PR operations: CLI commands, work item linking rules, merge commit messages, and markdown formatting.\nLoaded by azure-devops-pr for workflow steps.\nTRIGGER when managing or querying existing PRs.\nDO NOT TRIGGER when creating a new PR. Load azure-devops-pr instead."
+description: "Authoritative command reference for Azure DevOps PR operations. Prevents command improvisation by providing tested ado-rest.sh calls, work item linking rules, and markdown formatting.\nLoaded by azure-devops-pr for workflow steps.\nTRIGGER when managing or querying existing PRs.\nDO NOT TRIGGER when creating a new PR. Load azure-devops-pr instead."
+metadata:
+  category: reference
 ---
 
 # Azure DevOps Repos

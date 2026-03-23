@@ -1,7 +1,9 @@
 ---
 name: backlog-management
-description: Backlog grooming, priority review, triage, and new idea capture in Azure DevOps. Use when organising backlogs, reviewing priority order, triaging new work, capturing ideas, or running grooming sessions.
+description: "Collaborative workflow for grooming and re-prioritising the Azure DevOps backlog. Without it, backlog reviews are unstructured and systematic issues (orphaned items, stale work, area path mismatches) go unidentified.\nTRIGGER when organising backlogs, triaging work, or reviewing priorities.\nDO NOT TRIGGER for creating or updating individual work items."
 user-invocable: true
+metadata:
+  category: workflow
 ---
 
 # Backlog Management

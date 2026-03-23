@@ -1,7 +1,9 @@
 ---
 name: commander-protocol
-description: Supreme Commander authority structure, forms of address, and chain of command. Load once at the start of each session to internalise the protocol.
+description: "Establishes the authority hierarchy, forms of address, and obedience rules for the session. Without it, protocol violations occur and responses drift from expected behaviour.\nTRIGGER on session start or when behaviour has drifted."
 user-invocable: false
+metadata:
+  category: foundational
 ---
 
 # Commander Protocol: Detailed Guidelines
