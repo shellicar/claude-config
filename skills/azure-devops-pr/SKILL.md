@@ -13,17 +13,37 @@ user-invocable: true
 1. **Create PR** with title and description per writing-style. Mention the parent PBI/Bug with `#1234` in the `## Related Work Items` section. Do NOT include Task IDs in the description.
 
 2. **Link Task** to the PR:
+
+   mcp__shellicar__exec:
+
+   ```json
+   {"steps":[{"commands":[{"program":"az","args":["repos","pr","work-item","add","--id","<PR_ID>","--work-items","<TASK_ID>","--org","https://dev.azure.com/{org}"]}]}]}
+   ```
+
    ```bash
    az repos pr work-item add --id <PR_ID> --work-items <TASK_ID> --org https://dev.azure.com/{org}
    ```
 
 3. **Preview merge message**:
+
+   mcp__shellicar__exec:
+
+   ```json
+   {"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh","stdin":"{\"org\":\"<ORG>\",\"id\":\"<PR_ID>\",\"mode\":\"show\"}"}]}]}
    ```
+
    ```bash
    echo '{"org":"<ORG>","id":"<PR_ID>","mode":"show"}' | pr-merge-message.sh
    ```
 
 4. **Set auto-complete with merge message**:
+
+   mcp__shellicar__exec:
+
+   ```json
+   {"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh","stdin":"{\"org\":\"<ORG>\",\"id\":\"<PR_ID>\",\"mode\":\"set-auto-complete\"}"}]}]}
+   ```
+
    ```bash
    echo '{"org":"<ORG>","id":"<PR_ID>","mode":"set-auto-complete"}' | pr-merge-message.sh
    ```

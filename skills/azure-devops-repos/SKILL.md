@@ -11,6 +11,25 @@ description: "Reference for Azure DevOps PR operations: CLI commands, work item 
 
 All PR operations use `ado-rest.sh` instead of `az repos`. The `az devops` extension has unreliable authentication — `ado-rest.sh` uses the standard `az login` AAD token directly.
 
+**mcp__shellicar__exec (preferred):**
+
+```json
+// List active PRs
+{"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops/scripts/ado-rest.sh","stdin":"{\"org\":\"{org}\",\"project\":\"{project}\",\"method\":\"GET\",\"path\":\"git/repositories/{repo}/pullrequests\",\"params\":{\"searchCriteria.status\":\"active\",\"api-version\":\"7.1\"}}"}]}]}
+
+// Show PR details
+{"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops/scripts/ado-rest.sh","stdin":"{\"org\":\"{org}\",\"project\":\"{project}\",\"method\":\"GET\",\"path\":\"git/repositories/{repo}/pullrequests/{id}\",\"params\":{\"api-version\":\"7.1\"}}"}]}]}
+
+// Create PR
+{"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops/scripts/ado-rest.sh","stdin":"{\"org\":\"{org}\",\"project\":\"{project}\",\"method\":\"POST\",\"path\":\"git/repositories/{repo}/pullrequests\",\"params\":{\"api-version\":\"7.1\"},\"body\":{\"sourceRefName\":\"refs/heads/<branch>\",\"targetRefName\":\"refs/heads/main\",\"title\":\"Title\",\"description\":\"Description\"}}"}]}]}
+
+// Update PR (auto-complete, merge options)
+{"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops/scripts/ado-rest.sh","stdin":"{\"org\":\"{org}\",\"project\":\"{project}\",\"method\":\"PATCH\",\"path\":\"git/repositories/{repo}/pullrequests/{id}\",\"params\":{\"api-version\":\"7.1\"},\"body\":{\"autoCompleteSetBy\":{\"id\":\"<user-id>\"},\"completionOptions\":{\"mergeStrategy\":\"squash\",\"deleteSourceBranch\":true,\"transitionWorkItems\":true}}}"}]}]}
+
+// Link work items (tasks) to PR
+{"steps":[{"commands":[{"program":"az","args":["repos","pr","work-item","add","--id","<PR_ID>","--work-items","<TASK_ID>","--org","https://dev.azure.com/{org}"]}]}]}
+```
+
 ```bash
 # List active PRs
 echo '{"org":"{org}","project":"{project}","method":"GET","path":"git/repositories/{repo}/pullrequests","params":{"searchCriteria.status":"active","api-version":"7.1"}}' | ~/.claude/skills/azure-devops/scripts/ado-rest.sh
@@ -48,7 +67,7 @@ az repos pr work-item add --id <PR_ID> --work-items <TASK_ID> --org https://dev.
 There are two types of work items linked to a PR. They use **different mechanisms**. Getting this wrong causes the wrong work items to appear in the "Related Work Items" section of the PR.
 
 | Work item type | Where it goes | How to link |
-|----------------|---------------|-------------|
+| -------------- | ------------- | ----------- |
 | **PBI or Bug** (the parent) | PR description — `## Related Work Items` section | `#1234` syntax in the description text. Azure DevOps auto-links it. |
 | **Task** (the child you created for this work) | Linked to the PR via CLI | `az repos pr work-item add --id <PR_ID> --work-items <TASK_ID>` |
 
@@ -61,6 +80,22 @@ There are two types of work items linked to a PR. They use **different mechanism
 Use `~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh` to manage merge commit messages.
 
 The script takes JSON on **stdin** with fields: `org` (required), `id` (required), `mode` (default: `validate`).
+
+**mcp__shellicar__exec (preferred):**
+
+```json
+// Show merge commit message
+{"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh","stdin":"{\"org\":\"<ORG>\",\"id\":\"<PR_ID>\",\"mode\":\"show\"}"}]}]}
+
+// Set auto-complete (recommended)
+{"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh","stdin":"{\"org\":\"<ORG>\",\"id\":\"<PR_ID>\",\"mode\":\"set-auto-complete\"}"}]}]}
+
+// Validate merge commit message
+{"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh","stdin":"{\"org\":\"<ORG>\",\"id\":\"<PR_ID>\",\"mode\":\"validate\"}"}]}]}
+
+// Set only merge commit message
+{"steps":[{"commands":[{"program":"~/.claude/skills/azure-devops-repos/scripts/pr-merge-message.sh","stdin":"{\"org\":\"<ORG>\",\"id\":\"<PR_ID>\",\"mode\":\"set\"}"}]}]}
+```
 
 ```bash
 # Show what the merge commit message should be
@@ -77,7 +112,8 @@ echo '{"org":"<ORG>","id":"<PR_ID>","mode":"set"}' | pr-merge-message.sh
 ```
 
 Expected format:
-```
+
+```text
 Merged PR {id}: {title}
 
 {description}
@@ -94,6 +130,7 @@ Azure DevOps markdown has specific formatting requirements.
 Work item links (`#1234`) render with full metadata (title, status badge). For clean display:
 
 **DO**: Put each link on its own line with blank lines between:
+
 ```markdown
 ## Related Work Items
 
@@ -103,6 +140,7 @@ Work item links (`#1234`) render with full metadata (title, status badge). For c
 ```
 
 **DON'T**: Put links on same line or use list format:
+
 ```markdown
 #1234 #5678
 
