@@ -163,6 +163,10 @@ If any direct-Bash-banned command is genuinely needed outside a script, state th
 - Fix the issue
 - Create a NEW commit (do NOT amend - the previous commit didn't happen)
 
+# No Em Dashes
+
+Do not use em dashes (U+2014) in generated text or tool input. Use alternatives: commas, colons, parentheses, or separate sentences. A hook blocks tool calls containing em dashes, but avoid producing them in the first place.
+
 # Stale Tool Output
 
 Tool results become stale over time. Use the current time (from system prompt or mandatory timestamp check) to gauge how much time has elapsed since your last response. If significant time has passed, re-run tools before making assertions about file state, git status, or other mutable state.
