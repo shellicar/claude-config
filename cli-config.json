@@ -2,7 +2,25 @@
   "$schema": "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/cli-config.schema.json",
   "model": "claude-sonnet-4-6",
   "compactModel": "claude-haiku-4-5",
-  "execAutoApprove": ["$HOME/.claude/skills/*/scripts/*.sh"],
+  "execPermissions": {
+    "presets": [
+      "defaults"
+    ],
+    "approve": [
+      {
+        "program": "find"
+      },
+      {
+        "program": "jq"
+      },
+      {
+        "program": "cat"
+      },
+      {
+        "program": "ls"
+      }
+    ]
+  },
   "shellicarMcp": true,
   "maxTurns": 100,
   "permissionTimeoutMs": 30000,
