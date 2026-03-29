@@ -29,6 +29,7 @@ Match when:
 ## Branch Naming
 
 - `feature/<name>`
+- `feature/version-<version>` (version bumps and releases)
 - `fix/<name>`
 - `main` (default branch)
 

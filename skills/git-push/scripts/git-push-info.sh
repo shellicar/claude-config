@@ -27,6 +27,14 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Verify git identity is configured before proceeding
+GIT_NAME=$(git config user.name 2>/dev/null || true)
+GIT_EMAIL=$(git config user.email 2>/dev/null || true)
+if [ -z "$GIT_NAME" ] || [ -z "$GIT_EMAIL" ]; then
+  printf '{"error":"Git identity not fully configured (name=%s, email=%s). Stop and confirm with user before proceeding."}\n' "$GIT_NAME" "$GIT_EMAIL" >&2
+  exit 1
+fi
+
 # Detect convention name
 DETECT_SCRIPT="$HOME/.claude/skills/detect-convention/scripts/detect-convention.sh"
 CONVENTION=""

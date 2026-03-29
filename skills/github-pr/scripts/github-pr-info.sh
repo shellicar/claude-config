@@ -1,6 +1,14 @@
 #!/bin/sh
 set -e
 
+# Verify git identity is configured before proceeding
+GIT_NAME=$(git config user.name 2>/dev/null || true)
+GIT_EMAIL=$(git config user.email 2>/dev/null || true)
+if [ -z "$GIT_NAME" ] || [ -z "$GIT_EMAIL" ]; then
+  printf '{"error":"Git identity not fully configured (name=%s, email=%s). Stop and confirm with user before proceeding."}\n' "$GIT_NAME" "$GIT_EMAIL" >&2
+  exit 1
+fi
+
 # github-pr-info.sh - Gather all PR-related state in one call
 # Outputs JSON that Claude can parse
 #

@@ -29,6 +29,7 @@ Match when:
 ## Branch Naming
 
 - `feature/<name>` — new features
+- `feature/version-<version>` (version bumps and releases)
 - `fix/<name>` — bug fixes
 - `docs/<name>` — documentation changes
 - `security/<name>` — security fixes and vulnerability patches

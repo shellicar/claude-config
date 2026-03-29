@@ -45,6 +45,14 @@
         "program": "gh"
       },
       {
+        "program": "git",
+        "args": ["status"]
+      },
+      {
+        "program": "pnpm",
+        "args": ["version","--no-git-tag-version"]
+      },
+      {
         "args": [
           "diff"
         ],
@@ -76,6 +84,13 @@
         "args": [
           "issue",
           "view"
+        ],
+        "program": "gh"
+      },
+      {
+        "args": [
+          "issue",
+          "list"
         ],
         "program": "gh"
       }
