@@ -112,6 +112,7 @@
     "deny": [
       "Bash(*--unsafe*)",
       "Bash(*\"System.Parent=[0-9]+\"*)",
+      "Edit(.config)",
       "Edit(.git)",
       "Edit(**/package.json)",
       "Edit(~/.bash_logout)",
@@ -129,6 +130,7 @@
       "mcp__ide__executeCode",
       "Read(./.env)",
       "Read(**/.mcp.json)",
+      "Write(.config)",
       "Write(.git)",
       "Write(**/package.json)",
       "Write(~/.bash_logout)",
