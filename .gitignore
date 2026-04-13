@@ -36,3 +36,5 @@ audit/
 # sync skills
 .env
 skills
+conversations
+sessions
