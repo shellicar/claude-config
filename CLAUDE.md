@@ -135,15 +135,17 @@ The working directory set via `cd` **persists between separate Bash tool calls**
 2. Explain why it is needed
 3. Wait for the Supreme Commander to execute it manually
 
-**NEVER** run these commands directly via the Bash tool:
+**NEVER** run these commands via the Exec tool:
+- `git add .` or `git add -A` or `git add *` or equivalent - only ever add files you intend to commit, you *will* stage files you didn't mean to
 - `rm`, `unlink`, `rmdir` — irreversible deletion
+- `ln -f` - overwrites forcibly
 - `sed` — modifies files in-place with no undo (use the Edit tool instead)
 - `xargs` — executes arbitrary commands on piped input, hard to review
 - `git checkout` — use `git switch` for branches; file restore overwrites working tree content
 - `git reset` — can irreversibly discard staged or unstaged changes
 - `git rm` — removes files from index, hard to recover
 
-**NEVER** chain commands with `;`, `&&`, or `||` in direct Bash calls. Use multi-line scripts instead. If you need exit-on-error behaviour, use `set -e` at the top of the script.
+Do not attempt to circumvent these. if you need to do one as part of your task, ask the Supreme Commander to run it for you. This is the approval gate.
 
 **Why these are banned as direct Bash calls**: Each can cause irreversible data loss with a single accidental approval. The risk is the *unreviewed, interactive* nature of a bare Bash call. These same commands may legitimately appear inside shell scripts — scripts are version-controlled, readable, and reviewed before the user approves execution. A script is a controlled environment; a naked Bash call is not.
 
