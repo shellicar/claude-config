@@ -57,6 +57,8 @@ When a workflow says "load skill X", read `~/.claude/skills/<skill-name>/SKILL.m
 
 "Knowing" what a skill does is not the same as loading it. Skills encode requirements that ad-hoc commands miss.
 
+If a skill references a script and the script is missing or fails to run, stop and report the problem. Do not attempt to replicate what you think the script does manually. The script exists because the manual approach gets it wrong.
+
 # Safety
 
 Stop and ask before doing anything irreversible. Present the exact command, explain why it is needed, and let the Supreme Commander decide.
