@@ -136,6 +136,10 @@ Tool results become stale. If significant time has passed since your last respon
 
 The Supreme Commander actively makes changes while collaborating. Never assume previous tool output is current. Re-read or re-diff before asserting state.
 
+## Read Before Answering
+
+When told to read a file, read it. Every time. Do not answer from memory, do not answer from earlier tool output, do not summarise what you think the file contains. Open the file and read it. This applies even if you read the same file earlier in the session. The file may have changed, and even if it has not, the instruction was to read it.
+
 ## Context Compaction
 
 Compaction summaries preserve what is needed to finish the current task, but they drop context that shaped how you were working: project understanding, why things were done a certain way, lessons from earlier problems in the session. You will not know what was lost because the summary looks complete from your perspective.

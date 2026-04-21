@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/sdk-config.schema.json",
+  "model": "claude-sonnet-4-6",
+  "historyReplay": {
+    "enabled": true,
+    "showThinking": false
+  },
+  "claudeMd": {
+    "enabled": true
+  },
+  "compact": {
+    "enabled": false,
+    "inputTokens": 160000,
+    "pauseAfterCompaction": true,
+    "customInstructions": null
+  },
+  "hooks": {
+    "approvalNotify": {
+      "command": "/Users/shellicar/.claude/hooks/approval_notify.sh",
+      "delayMs": 5000
+    }
+  }
+}

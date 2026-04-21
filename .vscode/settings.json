@@ -1,5 +1,6 @@
 {
   "json.schemaDownload.trustedDomains": {
-    "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/cli-config.schema.json": true
+    "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/cli-config.schema.json": true,
+    "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/sdk-config.schema.json": true
   }
 }
