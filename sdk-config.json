@@ -16,7 +16,7 @@
   },
   "hooks": {
     "approvalNotify": {
-      "command": "/Users/shellicar/.claude/hooks/approval_notify.sh",
+      "command": "./hooks/approval_notify.sh",
       "delayMs": 5000
     }
   }

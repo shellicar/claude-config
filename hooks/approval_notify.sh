@@ -30,5 +30,13 @@ FOCUS_CMD="osascript -e 'tell application \"iTerm2\"' -e 'activate' -e 'select w
 TMUX_SWITCH="${TMUX_CMD} switch-client -t '${SESSION_TARGET}'; ${TMUX_CMD} select-window -t '${WINDOW_TARGET}'; ${TMUX_CMD} select-pane -t '${PANE_TARGET}'"
 EXECUTE_CMD="${FOCUS_CMD}; ${TMUX_SWITCH}"
 
-# echo "$EXECUTE_CMD" >> /tmp/execute_cmd_debug.txt
-terminal-notifier -title "$TITLE" -message "$MESSAGE" -sound "$SOUND" -execute "$EXECUTE_CMD"
+# Always send BEL: if we're on this session we hear it, if not it marks the window
+printf '\a'
+
+# Only send macOS notification if the client is on a different session, window, or pane
+CLIENT_SESSION=$(tmux display-message -p '#{client_session}')
+CLIENT_WINDOW=$(tmux display-message -p '#{client_session}:#{window_index}')
+CLIENT_PANE=$(tmux display-message -p '#{client_session}:#{window_index}.#{pane_index}')
+if [ "$CLIENT_SESSION" != "$SESSION_TARGET" ] || [ "$CLIENT_WINDOW" != "$WINDOW_TARGET" ] || [ "$CLIENT_PANE" != "$PANE_TARGET" ]; then
+  terminal-notifier -title "$TITLE" -message "$MESSAGE" -sound "$SOUND" -execute "$EXECUTE_CMD"
+fi
