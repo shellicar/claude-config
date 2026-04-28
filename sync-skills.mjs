@@ -2,7 +2,7 @@
 
 // Author: BananaBot9000 <bananabot9000@bananabot.dev>
 import { readFileSync, writeFileSync, readdirSync, symlinkSync, readlinkSync, lstatSync, statSync, unlinkSync, existsSync, mkdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 
 const CLAUDE_DIR = join(homedir(), '.claude');
@@ -114,8 +114,55 @@ function executeActions({ toRemove, toCreate }) {
   }
 }
 
+const DOC_FILES = ['CLAUDE.md', 'PHILOSOPHY.md'];
+
+function syncDocFiles(repoDir) {
+  const results = { kept: [], created: [], removed: [], skipped: [] };
+
+  for (const file of DOC_FILES) {
+    const src = join(repoDir, file);
+    const dest = join(CLAUDE_DIR, file);
+
+    if (!existsSync(src)) {
+      results.skipped.push(file);
+      console.warn(`  Skipping ${file}: not found in repo`);
+      continue;
+    }
+
+    // lstat doesn't follow symlinks, so it works for broken symlinks too.
+    // It throws if nothing exists at the path at all.
+    let destStat;
+    try { destStat = lstatSync(dest); } catch { destStat = null; }
+
+    if (destStat) {
+      if (destStat.isSymbolicLink()) {
+        const currentTarget = readlinkSync(dest);
+        if (resolve(currentTarget) === resolve(src)) {
+          results.kept.push(file);
+          continue;
+        }
+        // Wrong target — remove and recreate
+        unlinkSync(dest);
+        results.removed.push(file);
+      } else {
+        // Regular file exists — don't clobber it
+        console.warn(`  Skipping ${file}: non-symlink already exists at ${dest}`);
+        results.skipped.push(file);
+        continue;
+      }
+    }
+
+    symlinkSync(src, dest);
+    results.created.push(file);
+    console.log(`  + linked:   ${file}`);
+  }
+
+  return results;
+}
+
 function main() {
   const srcDir = loadSourceDir();
+  const repoDir = dirname(srcDir);
   const config = loadConfig();
   config.skills ??= {};
 
@@ -140,11 +187,20 @@ function main() {
   const actions = resolveActions(srcDir, skills, config);
   executeActions(actions);
 
+  // 4. Sync doc files from repo root
+  const docResults = syncDocFiles(repoDir);
+
   console.log(`\nSync complete:`);
-  console.log(`  ${actions.toKeep.length} unchanged`);
-  console.log(`  ${actions.toCreate.length} linked`);
-  console.log(`  ${actions.toRemove.length} removed`);
-  console.log(`  ${actions.skipped} disabled`);
+  console.log(`  Skills:`);
+  console.log(`    ${actions.toKeep.length} unchanged`);
+  console.log(`    ${actions.toCreate.length} linked`);
+  console.log(`    ${actions.toRemove.length} removed`);
+  console.log(`    ${actions.skipped} disabled`);
+  console.log(`  Docs:`);
+  console.log(`    ${docResults.kept.length} unchanged`);
+  console.log(`    ${docResults.created.length} linked`);
+  console.log(`    ${docResults.removed.length} relinked`);
+  console.log(`    ${docResults.skipped.length} skipped`);
 }
 
 main();
