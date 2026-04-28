@@ -146,6 +146,7 @@
     ],
     "defaultMode": "acceptEdits"
   },
+  "model": "claude-opus-4-7",
   "hooks": {
     "PreToolUse": [
       {
@@ -196,6 +197,5 @@
       "Working"
     ]
   },
-  "autoUpdatesChannel": "latest",
-  "model": "claude-opus-4-6"
+  "autoUpdatesChannel": "latest"
 }

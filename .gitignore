@@ -38,3 +38,6 @@ audit/
 skills
 conversations
 sessions
+skills.json
+**/.sdk-conversation-id
+**/.sdk-conversation-history
