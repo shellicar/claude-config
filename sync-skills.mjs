@@ -48,7 +48,7 @@ function discoverSkills(srcDir) {
   for (const entry of entries) {
     const skillFile = join(srcDir, entry.name, 'SKILL.md');
     const stat = existsSync(skillFile) && statSync(skillFile);
-    if (stat && stat.isFile() && stat.size > 0) {
+    if (stat && stat.isFile()) {
       valid.push(entry.name);
     } else {
       invalid.push(entry.name);
