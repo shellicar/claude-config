@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/sdk-config.schema.json",
-  "model": "claude-sonnet-4-6",
+  "model": "claude-opus-4-7",
   "historyReplay": {
     "enabled": true,
     "showThinking": false
