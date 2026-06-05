@@ -1,18 +1,30 @@
 #!/bin/sh
 
-# Log the raw input (printf to preserve embedded newlines)
-# printf '%s\n' "$*" >> /Users/shellicar/.claude/.hook_history
+# Capture stdin once so it can be both logged and parsed.
+# Guarded with [ -t 0 ] so an interactive (no-pipe) run can't hang on cat.
+if [ ! -t 0 ]; then
+  PAYLOAD=$(cat)
+  STDIN_READ=1
+else
+  PAYLOAD=""
+  STDIN_READ=0
+fi
 
-# Parse tool name from JSON
-TOOL_NAME=$(printf '%s' "$*" | /usr/bin/jq -r '.name // "Unknown"' 2>/dev/null)
+# Log the payload for debugging.
+{
+  printf '=== %s ===\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+  if [ "$STDIN_READ" = "1" ]; then
+    printf 'stdin: [%s]\n' "$PAYLOAD"
+  else
+    printf 'stdin: (no pipe; skipped)\n'
+  fi
+} >> ~/.claude/.hook_history
+
+# Parse tool name from JSON (payload arrives on stdin, captured above)
+TOOL_NAME=$(printf '%s' "$PAYLOAD" | /usr/bin/jq -r '.name // "Unknown"' 2>/dev/null)
 if [ -z "$TOOL_NAME" ] || [ "$TOOL_NAME" = "null" ]; then
   TOOL_NAME="Unknown"
 fi
-
-# Notification settings
-TITLE="Claude Code"
-MESSAGE="Approval needed: ${TOOL_NAME}"
-SOUND="Ping"
 
 # Get tmux socket and pane target for click-to-switch
 TMUX_SOCKET=$(echo "$TMUX" | cut -d, -f1)
@@ -20,6 +32,14 @@ SESSION_TARGET=$(tmux display-message -t "$TMUX_PANE" -p '#{session_name}')
 WINDOW_TARGET=$(tmux display-message -t "$TMUX_PANE" -p '#{session_name}:#{window_index}')
 PANE_TARGET=$(tmux display-message -t "$TMUX_PANE" -p '#{session_name}:#{window_index}.#{pane_index}')
 TMUX_CMD="/opt/homebrew/bin/tmux -S ${TMUX_SOCKET}"
+
+# Window title for the notification (prefer @title, fall back to window name)
+WINDOW_TITLE=$(tmux display-message -t "$TMUX_PANE" -p '#{?#{@title},#{@title},#{window_name}}')
+
+# Notification settings
+TITLE="Claude Code · ${SESSION_TARGET} / ${WINDOW_TITLE}"
+MESSAGE="Approval needed: ${TOOL_NAME}"
+SOUND="Ping"
 
 # Resolve iTerm2 window ID from tmux client tty
 CLIENT_TTY=$(tmux display-message -p '#{client_tty}')
