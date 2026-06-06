@@ -1,8 +1,9 @@
 #!/bin/sh
 
 # Hook for Claude Code's tool-approval prompts.
-# Posts a macOS notification, plays a sound, and clicking the notification
-# focuses iTerm2 and switches tmux to the originating session/window/pane.
+# Posts a macOS notification with Yes/No actions via alerter. Yes/No send the
+# approval keystroke directly to the pane; clicking the notification body
+# focuses iTerm2 and switches tmux to the pane for manual response.
 
 LOG=~/.claude/.hook_history
 SOUND_FILE=/System/Library/Sounds/Ping.aiff
@@ -70,8 +71,8 @@ build_execute_cmd() {
 }
 
 # Play the notification sound at louder-than-default volume, backgrounded so
-# the script doesn't block. terminal-notifier's -sound goes through
-# Notification Center at fixed system volume; afplay -v lets us turn it up.
+# the script doesn't block. Notification Center plays sounds at fixed system
+# volume; afplay -v lets us turn it up.
 play_sound() {
   afplay -v "$SOUND_VOLUME" "$SOUND_FILE" &
 }
@@ -87,11 +88,20 @@ client_is_elsewhere() {
     [ "$CLIENT_PANE" != "$PANE_TARGET" ]
 }
 
-# Post the macOS notification.
+# Post the macOS notification via alerter. Backgrounded subshell waits for
+# the user's click, then acts: Yes/No send the keystroke to the pane,
+# content-click navigates to the pane for manual response.
 notify() {
   TITLE="Claude Code · ${SESSION_TARGET} / ${WINDOW_TITLE}"
   MESSAGE="Approval needed: ${TOOL_NAME}${PANE_ROLE:+ (${PANE_ROLE})}"
-  terminal-notifier -title "$TITLE" -message "$MESSAGE" -execute "$EXECUTE_CMD"
+  NAVIGATE="${EXECUTE_CMD}"
+  SEND_KEYS="${TMUX_CMD} send-keys -t ${TMUX_PANE}"
+  (ANSWER=$(alerter --message "$MESSAGE" --title "$TITLE" --close-label 'No' --actions 'Yes')
+   case "$ANSWER" in
+     "Yes") $SEND_KEYS y Enter ;;
+     "No") $SEND_KEYS n Enter ;;
+     "@CONTENTCLICKED") eval "$NAVIGATE" ;;
+   esac) &
 }
 
 main() {
