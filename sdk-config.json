@@ -1,12 +1,19 @@
 {
   "$schema": "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/sdk-config.schema.json",
-  "model": "claude-opus-4-7",
+  "model": "claude-sonnet-4-6",
+  "maxTokens": 120000,
   "historyReplay": {
     "enabled": true,
     "showThinking": false
   },
   "claudeMd": {
-    "enabled": true
+    "enabled": true,
+    "sources": {
+      "user": true,
+      "project": true,
+      "projectClaude": true,
+      "local": true
+    }
   },
   "compact": {
     "enabled": false,
@@ -14,10 +21,35 @@
     "pauseAfterCompaction": true,
     "customInstructions": null
   },
+  "advancedTools": {
+    "enabled": false,
+    "searchTool": null,
+    "allowProgrammaticExecution": [],
+    "codeExecutionTool": "code_execution_20260120"
+  },
+  "serverTools": {
+    "webSearch": {
+      "enabled": true,
+      "version": "web_search_20260209",
+      "allowedCallers": [
+        "direct"
+      ]
+    },
+    "webFetch": {
+      "enabled": true,
+      "version": "web_fetch_20260209",
+      "allowedCallers": [
+        "direct"
+      ]
+    }
+  },
   "hooks": {
     "approvalNotify": {
       "command": "./hooks/approval_notify.sh",
       "delayMs": 5000
     }
+  },
+  "statusBar": {
+    "showConversationId": true
   }
 }

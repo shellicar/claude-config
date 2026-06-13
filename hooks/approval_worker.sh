@@ -80,10 +80,10 @@ notify() {
   MESSAGE="Approval needed: ${TOOL_NAME}${PANE_ROLE:+ (${PANE_ROLE})}"
   NAVIGATE="${EXECUTE_CMD}"
   SEND_KEYS="${TMUX_CMD} send-keys -t ${TMUX_PANE}"
-  ANSWER=$(alerter --message "$MESSAGE" --title "$TITLE" --close-label 'No' --actions 'Yes')
+  ANSWER=$(alerter --message "$MESSAGE" --title "$TITLE" --actions 'Yes,No')
   case "$ANSWER" in
-    "Yes") $SEND_KEYS y Enter ;;
-    "No") $SEND_KEYS n Enter ;;
+    "Yes") $SEND_KEYS Y ;;
+    "No") $SEND_KEYS N ;;
     "@CONTENTCLICKED") eval "$NAVIGATE" ;;
   esac
 }
