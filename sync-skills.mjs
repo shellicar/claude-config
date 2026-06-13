@@ -114,7 +114,7 @@ function executeActions({ toRemove, toCreate }) {
   }
 }
 
-const DOC_FILES = ['CLAUDE.md', 'PHILOSOPHY.md'];
+const DOC_FILES = ['CLAUDE.md', 'PHILOSOPHY.md', 'SYSTEM.md'];
 
 function syncDocFiles(repoDir) {
   const results = { kept: [], created: [], removed: [], skipped: [] };
