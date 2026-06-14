@@ -1,16 +1,20 @@
 #!/bin/sh
-# Trim tool_result content and thinking text from a Claude conversation .jsonl file.
+# Trim a Claude conversation .jsonl file along two independent axes.
 #
-# Strategy: replace the inner text of any tool_result that is BOTH
-#   - older than the last KEEP_LAST_N_TURNS message lines, AND
-#   - longer than SIZE_THRESHOLD_BYTES characters
-# with: <head>\n...[trimmed N characters]...\n<tail>
+# Thinking (the heavy axis): on Claude 4 models almost all of a thinking
+# block's weight is the encrypted signature, not the readable text, so
+# emptying .thinking reclaims almost nothing. Instead, drop whole thinking
+# blocks oldest-first until SAVE_THINKING_TARGET_PCT of the file's total
+# thinking bytes is reclaimed. The cut is clamped so it never enters the last
+# KEEP_LAST_N_MESSAGES messages -- the target yields to that floor, so a small
+# conversation may save less than the target. Dropping whole prior-turn
+# thinking blocks is API-sanctioned; keeping a block while altering its
+# signature would be rejected on replay.
 #
-# Tool_use to tool_result pairing is preserved (the block stays in place,
-# only its inner text is shortened) so the file remains a valid replay.
-#
-# Thinking blocks older than KEEP_LAST_N_TURNS message lines have their
-# .thinking string emptied; .type and .signature are left in place.
+# Tool_results (the light axis): the inner text of any tool_result older than
+# the last KEEP_LAST_N_MESSAGES messages and longer than SIZE_THRESHOLD_BYTES
+# is shortened to <head>\n...[trimmed N characters]...\n<tail>. The block stays
+# in place, so tool_use/tool_result pairing -- and the replay -- is preserved.
 #
 # Length is measured in Unicode code points, not raw bytes. Mostly the same
 # in practice; the saved-bytes figure is approximate for non-ASCII content.
@@ -23,10 +27,11 @@
 set -e
 
 # ===== Configuration =====
-KEEP_LAST_N_TURNS=10        # protect tool_results and thinking in this many trailing message lines
-SIZE_THRESHOLD_BYTES=50     # only trim tool_results whose text length exceeds this
-HEAD_CHARS=10               # leading context to keep
-TAIL_CHARS=10               # trailing context to keep
+KEEP_LAST_N_MESSAGES=10      # protected tail: never drop thinking or trim tool_results in this many trailing messages
+SAVE_THINKING_TARGET_PCT=50  # drop oldest whole thinking blocks until this % of total thinking bytes is reclaimed (clamped by the tail)
+SIZE_THRESHOLD_BYTES=50      # only trim tool_results whose text length exceeds this
+HEAD_CHARS=10                # leading context to keep in a trimmed tool_result
+TAIL_CHARS=10                # trailing context to keep in a trimmed tool_result
 # =========================
 
 DESTRUCTIVE=0
@@ -91,35 +96,56 @@ TMP=$(mktemp)
 trap 'rm -f -- "$TMP"' EXIT
 
 jq -sc \
-  --argjson N "$KEEP_LAST_N_TURNS" \
+  --argjson N "$KEEP_LAST_N_MESSAGES" \
+  --argjson P "$SAVE_THINKING_TARGET_PCT" \
   --argjson X "$SIZE_THRESHOLD_BYTES" \
   --argjson H "$HEAD_CHARS" \
   --argjson T "$TAIL_CHARS" '
   . as $msgs
   | ($msgs | length) as $n
+  # thinking-byte weight of each message, oldest first
+  | ([ $msgs[]
+       | ([ (.content // [])
+            | if type == "array" then .[] else empty end
+            | select(.type == "thinking") | (tostring | length) ] | add // 0) ]) as $tb
+  | ($tb | add // 0) as $total
+  | ($total * $P / 100) as $target
+  # fewest oldest messages whose thinking reaches the target
+  | (if $P <= 0 then 0
+     else (reduce range(0; $n) as $i ({s: 0, k: null};
+             if .k != null then .
+             else (.s + $tb[$i]) as $ns
+               | if $ns >= $target then {s: $ns, k: ($i + 1)} else {s: $ns, k: null} end
+             end) | .k // $n)
+     end) as $cut
+  # clamp so the cut never enters the protected tail of $N trailing messages
+  | ([[$cut, ($n - $N)] | min, 0] | max) as $eff
   | $msgs
   | to_entries
   | map(
       .key as $idx
       | .value
-      | if (($idx + 1) <= ($n - $N)) and ((.content // null) | type == "array") then
-          .content |= map(
-            if .type == "tool_result" and ((.content // null) | type == "array") then
-              .content |= map(
-                if .type == "text" then
-                  .text as $t
-                  | if ($t | length) > $X and ($t | length) > ($H + $T + 50) then
-                      .text = (($t[:$H])
-                               + "\n...[trimmed "
-                               + (($t | length) - $H - $T | tostring)
-                               + " characters]...\n"
-                               + ($t[-$T:]))
-                    else . end
-                else . end
-              )
-            elif .type == "thinking" then
-              .thinking = ""
-            else . end
+      | if ((.content // null) | type == "array") then
+          .content |= (
+            (if $idx < $eff then map(select(.type != "thinking")) else . end)
+            | (if ($idx + 1) <= ($n - $N) then
+                map(
+                  if .type == "tool_result" and ((.content // null) | type == "array") then
+                    .content |= map(
+                      if .type == "text" then
+                        .text as $t
+                        | if ($t | length) > $X and ($t | length) > ($H + $T + 50) then
+                            .text = (($t[:$H])
+                                     + "\n...[trimmed "
+                                     + (($t | length) - $H - $T | tostring)
+                                     + " characters]...\n"
+                                     + ($t[-$T:]))
+                          else . end
+                      else . end
+                    )
+                  else . end
+                )
+              else . end)
           )
         else . end
     )
