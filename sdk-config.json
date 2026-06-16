@@ -1,7 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/sdk-config.schema.json",
-  "model": "claude-sonnet-4-6",
+  "model": "claude-opus-4-8",
   "maxTokens": 120000,
+  "thinking": {
+    "enabled": true,
+    "effort": "max"
+  },
   "historyReplay": {
     "enabled": true,
     "showThinking": false
@@ -14,6 +18,16 @@
       "projectClaude": true,
       "local": true
     }
+  },
+  "systemPrompt": {
+    "enabled": true,
+    "sources": {
+      "user": true,
+      "project": true,
+      "projectClaude": true,
+      "local": true
+    },
+    "text": null
   },
   "compact": {
     "enabled": false,
@@ -49,7 +63,23 @@
       "delayMs": 5000
     }
   },
+  "tools": {
+    "exec": false,
+    "execV2": true
+  },
   "statusBar": {
     "showConversationId": true
+  },
+  "permissions": {
+    "default": {
+      "read": "approve",
+      "write": "approve",
+      "delete": "ask"
+    },
+    "outside": {
+      "read": "approve",
+      "write": "ask",
+      "delete": "deny"
+    }
   }
 }
