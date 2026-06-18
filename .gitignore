@@ -49,3 +49,10 @@ SYSTEM.md
 .hook_history
 .last-cleanup
 .last-update-result.json
+
+# daemon and job runtime state — per-host, not synced
+daemon/
+daemon-auth-cooldown
+daemon-auth-status.json
+*.log
+jobs/

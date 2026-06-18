@@ -107,7 +107,9 @@
       "Read(~/.claude/settings.json)",
       "Read(~/.claude/skills/**)",
       "WebFetch(domain:next.shadcn-svelte.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_stats"
     ],
     "deny": [
       "Bash(*--unsafe*)",
@@ -170,12 +172,16 @@
       }
     ]
   },
+  "worktree": {
+    "baseRef": "fresh"
+  },
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
   "enabledPlugins": {
-    "temporal-developer@temporal-marketplace": true
+    "temporal-developer@temporal-marketplace": true,
+    "quality-review-plugin@my-plugins": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -189,6 +195,12 @@
         "source": "github",
         "repo": "temporalio/agent-skills"
       }
+    },
+    "my-plugins": {
+      "source": {
+        "source": "git",
+        "url": "https://eagersautomotive@dev.azure.com/eagersautomotive/ai-enablement/_git/ai-enablement"
+      }
     }
   },
   "spinnerVerbs": {
@@ -200,6 +212,7 @@
   "autoUpdatesChannel": "latest",
   "verbose": true,
   "autoCompactEnabled": false,
-  "fileCheckpointingEnabled": false,
-  "agentPushNotifEnabled": false
+  "fileCheckpointingEnabled": true,
+  "agentPushNotifEnabled": false,
+  "promptSuggestionEnabled": false
 }
