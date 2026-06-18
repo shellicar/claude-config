@@ -44,3 +44,8 @@ skills.json
 CLAUDE.md
 PHILOSOPHY.md
 SYSTEM.md
+
+# machine-local state — per-host, not synced
+.hook_history
+.last-cleanup
+.last-update-result.json

@@ -4,7 +4,7 @@
   "maxTokens": 120000,
   "thinking": {
     "enabled": true,
-    "effort": "max"
+    "effort": "low"
   },
   "historyReplay": {
     "enabled": true,
@@ -64,7 +64,7 @@
     }
   },
   "tools": {
-    "exec": false,
+    "exec": true,
     "execV2": true
   },
   "statusBar": {

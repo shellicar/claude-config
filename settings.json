@@ -197,5 +197,9 @@
       "Working"
     ]
   },
-  "autoUpdatesChannel": "latest"
+  "autoUpdatesChannel": "latest",
+  "verbose": true,
+  "autoCompactEnabled": false,
+  "fileCheckpointingEnabled": false,
+  "agentPushNotifEnabled": false
 }
