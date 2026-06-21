@@ -43,14 +43,14 @@
   },
   "serverTools": {
     "webSearch": {
-      "enabled": true,
+      "enabled": false,
       "version": "web_search_20260209",
       "allowedCallers": [
         "direct"
       ]
     },
     "webFetch": {
-      "enabled": true,
+      "enabled": false,
       "version": "web_fetch_20260209",
       "allowedCallers": [
         "direct"
@@ -78,7 +78,7 @@
     },
     "outside": {
       "read": "approve",
-      "write": "ask",
+      "write": "approve",
       "delete": "deny"
     }
   }

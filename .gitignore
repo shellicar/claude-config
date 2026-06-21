@@ -56,3 +56,4 @@ daemon-auth-cooldown
 daemon-auth-status.json
 *.log
 jobs/
+persistence.db*
