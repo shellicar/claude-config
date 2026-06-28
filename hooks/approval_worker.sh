@@ -10,6 +10,10 @@ SOUND_VOLUME=3
 DEBUG_LOG=0
 PAYLOAD="$HOOK_PAYLOAD"
 
+# Use our patched (non-leaking) alerter if installed; fall back to PATH (brew).
+ALERTER="$HOME/bin/alerter"
+[ -x "$ALERTER" ] || ALERTER=alerter
+
 # Append a timestamped debug entry to $LOG. Off by default; enable in main().
 log_payload() {
   {
@@ -80,7 +84,7 @@ notify() {
   MESSAGE="Approval needed: ${TOOL_NAME}${PANE_ROLE:+ (${PANE_ROLE})}"
   NAVIGATE="${EXECUTE_CMD}"
   SEND_KEYS="${TMUX_CMD} send-keys -t ${TMUX_PANE}"
-  ANSWER=$(alerter --message "$MESSAGE" --title "$TITLE" --actions 'Yes,No')
+  ANSWER=$("$ALERTER" --message "$MESSAGE" --title "$TITLE" --actions 'Yes,No')
   case "$ANSWER" in
     "Yes") $SEND_KEYS Y ;;
     "No") $SEND_KEYS N ;;
