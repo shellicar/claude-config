@@ -1,5 +1,5 @@
 #!/bin/sh
-# Trim a Claude conversation .jsonl file along three independent axes.
+# Trim a Claude conversation .jsonl file along several independent axes.
 #
 # Thinking (the heavy axis): on Claude 4 models almost all of a thinking
 # block's weight is the encrypted signature, not the readable text, so
@@ -16,17 +16,23 @@
 # is shortened to <head>\n...[trimmed N characters]...\n<tail>. The block stays
 # in place, so tool_use/tool_result pairing -- and the replay -- is preserved.
 #
-# Images (the continuation axis): this one is not about size. The Claude API
-# allows up to 20 images per request at up to 8000x8000px each; beyond 20 the
-# per-image cap drops to 2000px, so an otherwise-fine conversation stops
-# replaying once it accumulates too many screenshots. base64 image data cannot
-# be truncated the way text can -- a partial payload is a corrupt image -- so
-# the fix is removal, not shortening. Image blocks (both top-level and those
-# nested inside tool_results) are dropped oldest-first until at most MAX_IMAGES
-# remain, each replaced by a [image removed] text block so the position leaves a
-# trace. The cut is clamped to the same protected tail of KEEP_LAST_N_MESSAGES,
-# so if the tail alone holds more than MAX_IMAGES the floor wins and fewer are
-# removed.
+# Images (the vision axis): this one is not about file size, it is about the
+# vision limits. The Claude API downscales every image to a per-model long-edge
+# ceiling before the model sees it (2576px for the high-resolution tier that
+# includes Opus 4.8; 1568px for the standard tier), and separately caps each
+# image at 2000px on the long edge once a request carries more than 20 images.
+# An image whose raw long edge exceeds 8000px is rejected outright. So the fix
+# is to *resize* rather than remove: base64 image data is decoded with sips,
+# resized so its long edge is at most LONG_EDGE_MAX (dropping to
+# LONG_EDGE_MAX_MANY when the image count exceeds IMAGE_SOFT_CAP -- most
+# restrictive wins), re-encoded, and spliced back in place. Resizing to the
+# model's own downscale point is a free loss: only pixels the API would have
+# discarded anyway are shed. Because resizing preserves the image, it is not
+# clamped to the protected tail -- a too-large recent image (the usual cause of
+# a wedged conversation) can only be fixed by reaching into the tail. Removal
+# survives only as a safety valve (MAX_IMAGES) against the API's hard per-request
+# image count; it is set so high it never fires in practice, and resize does the
+# real work.
 #
 # Length is measured in Unicode code points, not raw bytes. Mostly the same
 # in practice; the saved-bytes figure is approximate for non-ASCII content.
@@ -44,7 +50,10 @@ SAVE_THINKING_TARGET_PCT=50  # drop oldest whole thinking blocks until this % of
 SIZE_THRESHOLD_BYTES=50      # only trim tool_results whose text length exceeds this
 HEAD_CHARS=10                # leading context to keep in a trimmed tool_result
 TAIL_CHARS=10                # trailing context to keep in a trimmed tool_result
-MAX_IMAGES=10                # image axis: drop oldest image blocks until at most this many remain (clamped by the tail)
+LONG_EDGE_MAX=2576           # vision axis: resize images down to this long edge (Opus 4.8 high-resolution downscale point)
+LONG_EDGE_MAX_MANY=2000      # vision axis: tighter long-edge cap once image count exceeds IMAGE_SOFT_CAP (most restrictive wins)
+IMAGE_SOFT_CAP=20            # image count beyond which the API drops the per-image cap to LONG_EDGE_MAX_MANY
+MAX_IMAGES=300               # removal safety valve: drop oldest images only beyond this count (half the ~600 hard per-request cap; never fires in practice)
 # =========================
 
 DESTRUCTIVE=0
@@ -105,19 +114,113 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! command -v sips >/dev/null 2>&1; then
+  printf 'sips not found on PATH (required for the image resize axis)\n' >&2
+  exit 1
+fi
+
 TMP=$(mktemp)
 TMP_ALL=$(mktemp)
-trap 'rm -f -- "$TMP" "$TMP_ALL"' EXIT
+EXTRACT=$(mktemp)
+RESIZED=$(mktemp)
+MAPFILE=$(mktemp)
+WORKDIR=$(mktemp -d)
+trap 'rm -f -- "$TMP" "$TMP_ALL" "$EXTRACT" "$RESIZED" "$MAPFILE"; rm -rf -- "$WORKDIR"' EXIT
 
+TAB=$(printf '\t')
+
+# ---- Pass A: extract every image (coordinate, media type, base64), plus the total count. ----
+# One line per image: "<msg>/<block>/<inner>\t<media_type>\t<base64>"  (inner -1 = top-level image)
+# First line is "COUNT\t<total images>".
+jq -rs '
+  . as $msgs
+  | ([ $msgs[] | (.content // []) | if type == "array" then .[] else empty end
+       | if .type == "image" then 1
+         elif (.type == "tool_result" and ((.content // null) | type == "array"))
+           then (.content | map(select(.type == "image")) | length)
+         else 0 end ] | add // 0) as $itotal
+  | ("COUNT\t\($itotal)"),
+    ( range(0; ($msgs | length)) as $i
+      | ($msgs[$i].content // []) as $c
+      | range(0; ($c | length)) as $bi
+      | ($c[$bi]) as $blk
+      | if $blk.type == "image"
+          then "\($i)/\($bi)/-1\t\($blk.source.media_type)\t\($blk.source.data)"
+        elif ($blk.type == "tool_result" and (($blk.content // null) | type == "array"))
+          then (range(0; ($blk.content | length)) as $ni
+                | select($blk.content[$ni].type == "image")
+                | "\($i)/\($bi)/\($ni)\t\($blk.content[$ni].source.media_type)\t\($blk.content[$ni].source.data)")
+        else empty end )
+' "$INPUT" > "$EXTRACT"
+
+# ---- sips loop: decode, resize any image whose long edge exceeds the ceiling, re-encode. ----
+ITOTAL=0
+RESIZE_COUNT=0
+RESIZE_SAVED=0
+CEILING="$LONG_EDGE_MAX"
+
+: > "$RESIZED"
+
+while IFS="$TAB" read -r key media data; do
+  if [ "$key" = "COUNT" ]; then
+    ITOTAL="$media"
+    # Most restrictive wins: tighten to LONG_EDGE_MAX_MANY once past the soft cap.
+    if [ "$ITOTAL" -gt "$IMAGE_SOFT_CAP" ] && [ "$LONG_EDGE_MAX_MANY" -lt "$LONG_EDGE_MAX" ]; then
+      CEILING="$LONG_EDGE_MAX_MANY"
+    fi
+    continue
+  fi
+
+  case "$media" in
+    image/png)  ext=png ;;
+    image/jpeg) ext=jpg ;;
+    *)          ext="" ;;   # unsupported by this axis; leave the image untouched
+  esac
+  [ -z "$ext" ] && continue
+
+  IN="$WORKDIR/in.$ext"
+  OUT="$WORKDIR/out.$ext"
+
+  # printf is a shell builtin, so a multi-megabyte base64 argument does not hit ARG_MAX.
+  printf '%s' "$data" | base64 -D > "$IN" 2>/dev/null || continue
+
+  dims=$(sips -g pixelWidth -g pixelHeight "$IN" 2>/dev/null) || continue
+  w=$(printf '%s\n' "$dims" | awk '/pixelWidth/{print $2}')
+  h=$(printf '%s\n' "$dims" | awk '/pixelHeight/{print $2}')
+  [ -z "$w" ] || [ -z "$h" ] && continue
+
+  long="$w"
+  [ "$h" -gt "$w" ] && long="$h"
+  [ "$long" -le "$CEILING" ] && continue
+
+  sips --resampleHeightWidthMax "$CEILING" "$IN" --out "$OUT" >/dev/null 2>&1 || continue
+  newdata=$(base64 -i "$OUT" | tr -d '\n')
+  [ -z "$newdata" ] && continue
+
+  printf '%s\t%s\n' "$key" "$newdata" >> "$RESIZED"
+  RESIZE_COUNT=$((RESIZE_COUNT + 1))
+  RESIZE_SAVED=$((RESIZE_SAVED + ${#data} - ${#newdata}))
+done < "$EXTRACT"
+
+# ---- Build the coordinate -> new-base64 map for the splice pass. ----
+if [ -s "$RESIZED" ]; then
+  jq -Rn '[inputs | (index("\t")) as $t | {key: .[0:$t], value: .[($t+1):]}] | from_entries' "$RESIZED" > "$MAPFILE"
+else
+  printf '{}\n' > "$MAPFILE"
+fi
+
+# ---- Pass B: splice resized images in place, then apply the thinking / tool_result / removal axes. ----
 jq -sc \
+  --slurpfile MAP "$MAPFILE" \
   --argjson N "$KEEP_LAST_N_MESSAGES" \
   --argjson P "$SAVE_THINKING_TARGET_PCT" \
   --argjson X "$SIZE_THRESHOLD_BYTES" \
   --argjson H "$HEAD_CHARS" \
   --argjson T "$TAIL_CHARS" \
   --argjson M "$MAX_IMAGES" '
-  def trimmed_text($t):
-    ($t[:$H]) + "\n...[trimmed " + (($t | length) - $H - $T | tostring) + " characters]...\n" + ($t[-$T:]);
+  ($MAP[0]) as $map
+  | def trimmed_text($t):
+      ($t[:$H]) + "\n...[trimmed " + (($t | length) - $H - $T | tostring) + " characters]...\n" + ($t[-$T:]);
   def img_placeholder: {type: "text", text: "[image removed]"};
   . as $msgs
   | ($msgs | length) as $n
@@ -138,13 +241,12 @@ jq -sc \
      end) as $cut
   # clamp so the cut never enters the protected tail of $N trailing messages
   | ([[$cut, ($n - $N)] | min, 0] | max) as $eff
-  # image axis: total image count across both depths (top-level and nested in tool_results)
+  # image axis (removal, safety valve only): total image count across both depths
   | ([ $msgs[] | (.content // []) | .[]
        | if .type == "image" then 1
          elif (.type == "tool_result" and ((.content // null) | type == "array"))
            then (.content | map(select(.type == "image")) | length)
          else 0 end ] | add // 0) as $itotal
-  # how many to drop to bring the total to at most MAX_IMAGES
   | (if $itotal > $M then $itotal - $M else 0 end) as $idrop
   # coordinates of every droppable image (outside the protected tail), document order, oldest first
   | ([ range(0; $n) as $i
@@ -158,10 +260,9 @@ jq -sc \
                  | select($blk.content[$ni].type == "image")
                  | {i: $i, b: $bi, k: $ni})
          else empty end ]) as $icoords
-  # set of the oldest $idrop coordinates, keyed "msg/block/inner" (inner -1 = top-level image)
   | (reduce ($icoords[0:$idrop][]) as $x ({};
        .[($x.i | tostring) + "/" + ($x.b | tostring) + "/" + ($x.k | tostring)] = true)) as $dropset
-  # per-axis breakdown: blocks affected and approximate content reclaimed, reusing the same selections
+  # per-axis breakdown for thinking / tools / removal (resize is reported by the shell)
   | ([ range(0; $n) as $i | select($i < $eff)
        | ($msgs[$i].content // []) | .[] | select(.type == "thinking") ]) as $tdrop
   | ([ range(0; $n) as $i | select(($i + 1) <= ($n - $N))
@@ -186,20 +287,32 @@ jq -sc \
       | .value
       | if ((.content // null) | type == "array") then
           .content |= (
-            # image axis: replace dropped images (by original-index coordinate) with a placeholder
-            (if $idx < ($n - $N) then
-               (to_entries | map(
-                 .key as $bi | .value
-                 | if (.type == "image" and ($dropset[($idx | tostring) + "/" + ($bi | tostring) + "/-1"] // false))
-                     then img_placeholder
-                   elif (.type == "tool_result" and ((.content // null) | type == "array")) then
-                     .content |= (to_entries | map(
-                       .key as $ni | .value
-                       | if (.type == "image" and ($dropset[($idx | tostring) + "/" + ($bi | tostring) + "/" + ($ni | tostring)] // false))
-                           then img_placeholder
-                         else . end))
-                   else . end))
-             else . end)
+            # vision axis: splice resized image data by coordinate (all messages, not tail-protected)
+            (to_entries | map(
+               .key as $bi | .value
+               | ($map[($idx | tostring) + "/" + ($bi | tostring) + "/-1"] // null) as $new
+               | if (.type == "image" and $new != null) then .source.data = $new
+                 elif (.type == "tool_result" and ((.content // null) | type == "array")) then
+                   .content |= (to_entries | map(
+                     .key as $ni | .value
+                     | ($map[($idx | tostring) + "/" + ($bi | tostring) + "/" + ($ni | tostring)] // null) as $inew
+                     | if (.type == "image" and $inew != null) then .source.data = $inew
+                       else . end))
+                 else . end))
+            # image removal (safety valve): replace dropped images with a placeholder
+            | (if $idx < ($n - $N) then
+                 (to_entries | map(
+                   .key as $bi | .value
+                   | if (.type == "image" and ($dropset[($idx | tostring) + "/" + ($bi | tostring) + "/-1"] // false))
+                       then img_placeholder
+                     elif (.type == "tool_result" and ((.content // null) | type == "array")) then
+                       .content |= (to_entries | map(
+                         .key as $ni | .value
+                         | if (.type == "image" and ($dropset[($idx | tostring) + "/" + ($bi | tostring) + "/" + ($ni | tostring)] // false))
+                             then img_placeholder
+                           else . end))
+                     else . end))
+               else . end)
             | (if $idx < $eff then map(select(.type != "thinking")) else . end)
             | (if ($idx + 1) <= ($n - $N) then
                 map(
@@ -247,9 +360,11 @@ printf 'after:  %s bytes\n' "$new_bytes"
 printf 'saved:  %s bytes (%s%%)\n' "$saved" "$pct"
 
 # Per-axis breakdown. Approximate: these count content code points, not file
-# bytes, so the three figures will not sum exactly to the total saved above.
+# bytes, so the figures will not sum exactly to the total saved above. The
+# resize figure comes from the sips loop; the rest from the jq stats object.
+printf 'by axis (approx):\n'
+printf '  resize:   %s bytes in %s images (long edge -> %spx)\n' "$RESIZE_SAVED" "$RESIZE_COUNT" "$CEILING"
 printf '%s\n' "$STATS" | jq -r '
-  "by axis (approx):",
   "  thinking: \(.thinking.bytes) bytes in \(.thinking.blocks) blocks",
   "  tools:    \(.tools.bytes) bytes in \(.tools.blocks) trimmed",
   "  images:   \(.images.bytes) bytes in \(.images.blocks) removed"'
@@ -261,6 +376,9 @@ if [ "$DESTRUCTIVE" -eq 1 ]; then
   mv -- "$INPUT" "$BACKUP"
   mv -- "$TMP" "$INPUT"
   trap - EXIT
+  # WORKDIR and the other temps are still cleaned; re-arm a minimal cleanup.
+  rm -f -- "$TMP_ALL" "$EXTRACT" "$RESIZED" "$MAPFILE"
+  rm -rf -- "$WORKDIR"
   printf 'backup: %s\n' "$BACKUP"
 else
   printf 'DRY RUN — no files changed. Re-run with -d to apply.\n'
