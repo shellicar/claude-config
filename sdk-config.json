@@ -1,10 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/sdk-config.schema.json",
-  "model": "claude-opus-4-8",
+  "model": "claude-sonnet-5",
   "maxTokens": 120000,
   "thinking": {
     "enabled": true,
     "effort": "low"
+  },
+  "nats": {
+    "enabled": true
   },
   "historyReplay": {
     "enabled": true,
@@ -36,7 +39,7 @@
     "customInstructions": null
   },
   "advancedTools": {
-    "enabled": false,
+    "enabled": true,
     "searchTool": null,
     "allowProgrammaticExecution": [],
     "codeExecutionTool": "code_execution_20260120"
@@ -57,16 +60,7 @@
       ]
     }
   },
-  "hooks": {
-    "approvalNotify": {
-      "command": "./hooks/approval_notify.sh",
-      "delayMs": 5000
-    }
-  },
-  "tools": {
-    "exec": true,
-    "execV2": true
-  },
+  "tools": {},
   "statusBar": {
     "showConversationId": true
   },

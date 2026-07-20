@@ -148,7 +148,7 @@
     ],
     "defaultMode": "acceptEdits"
   },
-  "model": "claude-opus-4-7",
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -179,40 +179,18 @@
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
-  "enabledPlugins": {
-    "temporal-developer@temporal-marketplace": true,
-    "quality-review-plugin@my-plugins": true
-  },
-  "extraKnownMarketplaces": {
-    "claude-plugins-official": {
-      "source": {
-        "source": "git",
-        "url": "https://github.com/anthropics/claude-plugins-official.git"
-      }
-    },
-    "temporal-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "temporalio/agent-skills"
-      }
-    },
-    "my-plugins": {
-      "source": {
-        "source": "git",
-        "url": "https://eagersautomotive@dev.azure.com/eagersautomotive/ai-enablement/_git/ai-enablement"
-      }
-    }
-  },
   "spinnerVerbs": {
     "mode": "replace",
     "verbs": [
       "Working"
     ]
   },
-  "autoUpdatesChannel": "latest",
+  "effortLevel": "low",
+  "promptSuggestionEnabled": false,
+  "tui": "fullscreen",
+  "editorMode": "normal",
   "verbose": true,
   "autoCompactEnabled": false,
   "fileCheckpointingEnabled": true,
-  "agentPushNotifEnabled": false,
-  "promptSuggestionEnabled": false
+  "agentPushNotifEnabled": false
 }
