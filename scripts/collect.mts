@@ -8,7 +8,8 @@
  * Run:  npx tsx collect.mts   (or: bun collect.mts)   — the slow step; rerun only when you want fresh usage.
  *
  * Per session it stores a day x model breakdown — enough for render.mts to rebuild every rollup (day, month,
- * model, month x model) plus the project breakdown. Rates from pricing.ts; an unknown model is priced $0.
+ * model, month x model) plus the project breakdown. Rates from pricing.ts; a new version of a known model
+ * family falls back to that family's current rate (warned), and an unrecognised model is priced $0.
  */
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -21,26 +22,57 @@ const M = 1_000_000;
 
 type Rates = { input: number; cw5: number; cw1: number; read: number; output: number };
 
-// per-million-token rates from pricing.ts
+// per-million-token rates from pricing.ts, one constant per tier so a rate is never repeated
+const OPUS_HI: Rates = { input: 15, cw5: 18.75, cw1: 30, read: 1.5, output: 75 };
+const OPUS: Rates = { input: 5, cw5: 6.25, cw1: 10, read: 0.5, output: 25 };
+const SONNET: Rates = { input: 3, cw5: 3.75, cw1: 6, read: 0.3, output: 15 };
+const HAIKU_4_5: Rates = { input: 1, cw5: 1.25, cw1: 2, read: 0.1, output: 5 };
+const HAIKU_3_5: Rates = { input: 0.8, cw5: 1, cw1: 1.6, read: 0.08, output: 4 };
+const HAIKU_3: Rates = { input: 0.25, cw5: 0.3, cw1: 0.5, read: 0.03, output: 1.25 };
+const FABLE: Rates = { input: 10, cw5: 12.5, cw1: 20, read: 1, output: 50 };
+
 const PRICING: Record<string, Rates> = {
-  "claude-fable-5": { input: 10, cw5: 12.5, cw1: 20, read: 1, output: 50 },
-  "claude-opus-4-8": { input: 5, cw5: 6.25, cw1: 10, read: 0.5, output: 25 },
-  "claude-opus-4-7": { input: 5, cw5: 6.25, cw1: 10, read: 0.5, output: 25 },
-  "claude-opus-4-6": { input: 5, cw5: 6.25, cw1: 10, read: 0.5, output: 25 },
-  "claude-opus-4-5": { input: 5, cw5: 6.25, cw1: 10, read: 0.5, output: 25 },
-  "claude-opus-4-1": { input: 15, cw5: 18.75, cw1: 30, read: 1.5, output: 75 },
-  "claude-opus-4": { input: 15, cw5: 18.75, cw1: 30, read: 1.5, output: 75 },
-  "claude-sonnet-4-6": { input: 3, cw5: 3.75, cw1: 6, read: 0.3, output: 15 },
-  "claude-sonnet-4-5": { input: 3, cw5: 3.75, cw1: 6, read: 0.3, output: 15 },
-  "claude-sonnet-4": { input: 3, cw5: 3.75, cw1: 6, read: 0.3, output: 15 },
-  "claude-sonnet-3-7": { input: 3, cw5: 3.75, cw1: 6, read: 0.3, output: 15 },
-  "claude-haiku-4-5": { input: 1, cw5: 1.25, cw1: 2, read: 0.1, output: 5 },
-  "claude-haiku-3-5": { input: 0.8, cw5: 1, cw1: 1.6, read: 0.08, output: 4 },
-  "claude-opus-3": { input: 15, cw5: 18.75, cw1: 30, read: 1.5, output: 75 },
-  "claude-haiku-3": { input: 0.25, cw5: 0.3, cw1: 0.5, read: 0.03, output: 1.25 },
+  "claude-fable-5": FABLE,
+  "claude-opus-4-8": OPUS,
+  "claude-opus-4-7": OPUS,
+  "claude-opus-4-6": OPUS,
+  "claude-opus-4-5": OPUS,
+  "claude-opus-4-1": OPUS_HI,
+  "claude-opus-4": OPUS_HI,
+  "claude-sonnet-4-6": SONNET,
+  "claude-sonnet-4-5": SONNET,
+  "claude-sonnet-4": SONNET,
+  "claude-sonnet-3-7": SONNET,
+  "claude-haiku-4-5": HAIKU_4_5,
+  "claude-haiku-3-5": HAIKU_3_5,
+  "claude-opus-3": OPUS_HI,
+  "claude-haiku-3": HAIKU_3,
 };
 
-const ratesFor = (model: string): Rates | undefined => PRICING[model] ?? PRICING[model.replace(/-\d{8}$/, "")];
+// Family fallback: a new model version inherits its family's current-generation rates until it gets its own
+// row above (e.g. claude-sonnet-5 -> the sonnet rate). Estimate only, warned at the end so it stays visible;
+// add an explicit PRICING row once the real rate is known. An unrecognised family is priced $0, never dropped.
+const FAMILY: Record<string, Rates> = {
+  "claude-fable": FABLE,
+  "claude-opus": OPUS,
+  "claude-sonnet": SONNET,
+  "claude-haiku": HAIKU_4_5,
+};
+const ZERO: Rates = { input: 0, cw5: 0, cw1: 0, read: 0, output: 0 };
+const estimated = new Map<string, number>();
+const unpriced = new Map<string, number>();
+
+const ratesFor = (model: string): Rates => {
+  const exact = PRICING[model] ?? PRICING[model.replace(/-\d{8}$/, "")];
+  if (exact) return exact;
+  const fam = /^claude-(fable|opus|sonnet|haiku)/.exec(model)?.[0];
+  if (fam && FAMILY[fam]) {
+    estimated.set(model, (estimated.get(model) ?? 0) + 1);
+    return FAMILY[fam];
+  }
+  unpriced.set(model, (unpriced.get(model) ?? 0) + 1);
+  return ZERO;
+};
 
 const TZ = "Australia/Melbourne";
 const ZONE = ZoneId.of(TZ);
@@ -92,7 +124,6 @@ for (const file of files) {
       continue;
     }
     const r = ratesFor(model);
-    if (!r) continue;
 
     const inp = usage.input_tokens ?? 0;
     const out = usage.output_tokens ?? 0;
@@ -132,3 +163,11 @@ writeFileSync(outPath, `${JSON.stringify(out, null, 2)}\n`);
 
 console.log(`wrote ${outPath}`);
 console.log(`${files.length} files, ${records.toLocaleString()} records, ${Object.keys(sessions).length} sessions with usage`);
+if (estimated.size) {
+  const n = [...estimated.values()].reduce((a, b) => a + b, 0);
+  console.warn(`estimated ${n} records on ${estimated.size} model(s) via family fallback, add a PRICING row: ${[...estimated.keys()].sort().join(", ")}`);
+}
+if (unpriced.size) {
+  const n = [...unpriced.values()].reduce((a, b) => a + b, 0);
+  console.warn(`priced $0, unrecognised model family: ${n} records on ${[...unpriced.keys()].sort().join(", ")}`);
+}
