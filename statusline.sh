@@ -8,6 +8,7 @@ current_dir=$(echo "$input" | jq -r '.workspace.current_dir')
 dir_basename=$(basename "${current_dir:-$HOME}")
 model_name=$(echo "$input" | jq -r '.model.display_name')
 session_name=$(echo "$input" | jq -r '.session_name // empty')
+transcript_path=$(echo "$input" | jq -r '.transcript_path // empty')
 output_style=$(echo "$input" | jq -r '.output_style.name // empty')
 remaining_pct=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
@@ -21,23 +22,18 @@ output_tokens=$(echo "$input" | jq -r '.context_window.total_output_tokens // 0'
 ctx_used=$(echo "$input" | jq -r '(.context_window.current_usage | (.input_tokens // 0) + (.output_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0))')
 ctx_size=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
 
-# Current timestamp
-timestamp=$(date '+%d/%m %H:%M:%S')
+# Turns: count assistant responses in the transcript (grows with each tool cycle)
+if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
+  turns=$(jq -r 'select(.type=="assistant") | 1' "$transcript_path" 2>/dev/null | wc -l | tr -d ' ')
+else
+  turns=""
+fi
 
 # Build status line components
 status=""
 
-# Timestamp first (dim, matching tmux/prompt format)
-status+=$(printf '\e[0;90m%s\e[0m ' "$timestamp")
-
-# User@host and directory (green user, blue host, magenta dir)
-status+=$(printf '\e[0;32m%s\e[0m@\e[1;34m%s\e[0m \e[0;35m%s\e[0m' \
-  "$(whoami)" "$(hostname -s)" "$dir_basename")
-
-# Session name if set (cyan)
-if [ -n "$session_name" ]; then
-  status+=$(printf ' \e[0;36m[%s]\e[0m' "$session_name")
-fi
+# Directory (magenta)
+status+=$(printf '\e[0;35m%s\e[0m' "$dir_basename")
 
 # Model name (yellow)
 if [ -n "$model_name" ]; then
@@ -55,6 +51,11 @@ status+=$(printf ' \e[0;36m$%s\e[0m' "$cost_fmt")
 
 # Duration (white)
 status+=$(printf ' 🕐 %02d:%02d' "$MINS" "$SECS")
+
+# Turns (white)
+if [ -n "$turns" ]; then
+  status+=$(printf ' 🔄 %s' "$turns")
+fi
 
 # Input/output tokens (white)
 fmt_tokens() {
@@ -86,6 +87,11 @@ if [ -n "$remaining_pct" ]; then
     color='\e[0;31m'  # Red
   fi
   status+=$(printf " ${color}%s%%\e[0m" "${remaining_pct%.*}")
+fi
+
+# Session name if set (cyan), last
+if [ -n "$session_name" ]; then
+  status+=$(printf ' \e[0;36m[%s]\e[0m' "$session_name")
 fi
 
 echo -n "$status"
