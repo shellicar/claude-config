@@ -2,7 +2,7 @@
  * render: turn the collected data into markdown. Stage 3 of 3 (collect -> map -> render).
  *
  * Rendering only — no audit scan, no attribution. Reads scripts/data (usage-by-session.json from collect.mts,
- * session-projects.json from map.mts), joins on sessionId, and writes three views to the current directory:
+ * session-projects.json from map.mts), joins on sessionId, and writes three views to scripts/reports:
  *   usage-by-project.md    — month -> days -> per-model -> per-project breakdown -> subtotal, then grand totals.
  *   daily-matrix.md        — day x project cost matrix, contiguous days, biggest project first.
  *   unknown-sessions.md    — sessions with no named project, with their cwd/source so they can be tracked down.
@@ -12,7 +12,7 @@
  *
  * Projects totalling <= $15 are folded into "other/misc" in the two cost views.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LocalDate, YearMonth, ZoneId } from "@js-joda/core";
@@ -125,8 +125,10 @@ const byCost = (x: [string, Agg], y: [string, Agg]): number => y[1].cost - x[1].
 
 const months = [...byMonth.keys()].sort();
 const grand = [...byMonth.values()].reduce((s, a) => add(s, a), blank());
+const REPORTS = join(dirname(fileURLToPath(import.meta.url)), "reports");
+mkdirSync(REPORTS, { recursive: true });
 const write = (name: string, lines: string[]): string => {
-  const p = join(process.cwd(), name);
+  const p = join(REPORTS, name);
   writeFileSync(p, `${lines.join("\n")}\n`);
   return p;
 };
