@@ -186,9 +186,10 @@
     ]
   },
   "effortLevel": "low",
-  "promptSuggestionEnabled": false,
-  "tui": "fullscreen",
   "editorMode": "normal",
+  "promptSuggestionEnabled": false,
+  "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
   "verbose": true,
   "autoCompactEnabled": false,
   "fileCheckpointingEnabled": true,
