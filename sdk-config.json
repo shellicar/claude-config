@@ -75,5 +75,14 @@
       "write": "approve",
       "delete": "deny"
     }
-  }
+  },
+  "az":{
+    "accounts":{
+      "stephen":{
+        "tenantId": "a882bc25-e1dd-4721-b861-aba1afaec76d",
+        "readerClientId": "81cefba6-b63a-4c04-a749-624f58faa8a1",
+        "holderClientId": "b7eb41f5-a562-4e1f-b1a5-439f351c5653"
+      }
+    }
+  }  
 }
