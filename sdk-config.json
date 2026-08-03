@@ -1,10 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/shellicar/claude-cli/main/schema/sdk-config.schema.json",
-  "model": "claude-sonnet-5",
+  "model": "claude-opus-5",
   "maxTokens": 120000,
   "thinking": {
     "enabled": true,
-    "effort": "low"
+    "effort": "max"
   },
   "nats": {
     "enabled": true
@@ -60,7 +60,24 @@
       ]
     }
   },
-  "tools": {},
+  "tools": {
+    "blockedCommands": [
+      {
+        "program": "git",
+        "args": [
+          "add",
+          "-A"
+        ]
+      },
+      {
+        "program": "git",
+        "args": [
+          "add",
+          "--all"
+        ]
+      }
+    ]
+  },
   "statusBar": {
     "showConversationId": true
   },
@@ -76,13 +93,31 @@
       "delete": "deny"
     }
   },
-  "az":{
-    "accounts":{
-      "stephen":{
-        "tenantId": "a882bc25-e1dd-4721-b861-aba1afaec76d",
-        "readerClientId": "81cefba6-b63a-4c04-a749-624f58faa8a1",
-        "holderClientId": "b7eb41f5-a562-4e1f-b1a5-439f351c5653"
-      }
-    }
-  }  
+  "requiredSkills": {
+    "GitHub_PullRequest_Create": ["pr"]
+  },
+  "policy": [
+    { "tool": ["WriteMemory", "ReadMemory", "SearchMemory", "DeleteMemory", "MemoryTypes", "Ref", "Match", "Head"], "default": "allow" },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "allOf": ["add", "-A"] } }, "default": "deny", "message": "'git add -A' is blocked by configuration. Add files individually." },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "allOf": ["add", "--all"] } }, "default": "deny", "message": "'git add --all' is blocked by configuration. Ask the user to run it directly." },
+    { "tool": "Program", "input": { "program": { "basename": ["rm", "rmdir", "mkfs", "dd", "shred"] } }, "default": "deny", "message": "'{program}' is destructive and irreversible. Ask the user to run it directly." },
+    { "tool": "Program", "input": { "program": { "basename": ["xargs"] } }, "default": "deny", "message": "xargs can execute arbitrary commands on piped input. Write commands explicitly, or use Glob/Grep tools." },
+    { "tool": "Program", "input": { "program": { "basename": ["sed"] }, "args": { "anyOf": ["-i", "--in-place"] } }, "default": "deny", "message": "sed -i modifies files in-place with no undo. Use the redirect option to write to a new file, or use the Edit tool." },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "allOf": ["rm"] } }, "default": "deny", "message": "git rm is destructive and irreversible. Ask the user to run it directly." },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "allOf": ["checkout"] } }, "default": "deny", "message": "git checkout can discard uncommitted changes with no undo. Use \"git switch\" for branches, or ask the user to run it directly." },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "allOf": ["reset", "--hard"] } }, "default": "deny", "message": "git reset --hard is destructive and irreversible. Ask the user to run it directly." },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "allOf": ["restore"] } }, "default": "deny", "message": "git restore can discard uncommitted changes with no undo. Use \"git restore --staged\" to only unstage, or ask the user to run it directly." },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "allOf": ["push"], "anyOf": ["-f", "--force", "--force-with-lease", "--force-if-includes"] } }, "default": "deny", "message": "Force push overwrites remote history with no undo. Use regular \"git push\", or ask the user to run it directly." },
+    { "tool": "Program", "input": { "program": { "suffix": ".exe" } }, "default": "deny", "message": "'{program}' — there is no reason to call .exe. Run equivalent commands natively." },
+    { "tool": "Program", "input": { "program": { "basename": ["sudo"] } }, "default": "deny", "message": "sudo is not permitted. Run commands directly." },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "anyOf": ["-C", "--git-dir", "--work-tree", "-c"] } }, "default": "deny", "message": "git -C/--git-dir/--work-tree changes the working directory, and -c overrides config (including code-execution hooks like core.pager, core.sshCommand, credential.helper) outside review. Use cwd instead, and avoid -c overrides." },
+    { "tool": "Program", "input": { "program": { "basename": ["pnpm"] }, "args": { "anyOf": ["-C"] } }, "default": "deny", "message": "pnpm -C changes the working directory and bypasses auto-approve path checks. Use cwd instead." },
+    { "tool": "Program", "input": { "program": { "basename": ["env", "printenv"] }, "args": { "maxLength": 0 } }, "default": "deny", "message": "'{program}' without arguments would dump all environment variables. Specify which variable to read." },
+    { "tool": "Program", "input": { "program": { "basename": ["git"] }, "args": { "allOf": ["clean"] } }, "default": "deny", "message": "git clean deletes untracked files with no undo. Ask the user to run it directly." },
+    { "tool": "Program", "input": { "program": { "basename": ["sh", "bash", "zsh", "python", "python3", "node", "ruby", "perl", "osascript"] }, "args": { "anyOf": ["-c", "-e", "--eval"] } }, "default": "deny", "message": "'{program}' with inline code ('-c'/'-e'/'--eval') runs unreviewed content directly, bypassing the reviewable CreateFile/EditFile path. Write it to a file, then run that file." },
+    { "tool": "Program", "input": { "program": { "basename": ["find"] }, "args": { "anyOf": ["-exec", "-execdir", "-ok", "-okdir"] } }, "default": "deny", "message": "find's -exec/-execdir/-ok/-okdir runs unreviewed commands directly. Write the command to a file and run it, or use the Find/Match tools." },
+    { "path": "$PWD", "operations": { "fs.write": "allow", "fs.delete": "ask", "fs.exec": "allow" } },
+    { "path": "*", "operations": { "fs.read": "allow", "fs.write": "ask", "fs.delete": "deny", "fs.list": "allow", "fs.exec": "ask" } },
+    { "tool": "*", "default": "ask" }
+  ]
 }

@@ -16,6 +16,16 @@
 # is shortened to <head>\n...[trimmed N characters]...\n<tail>. The block stays
 # in place, so tool_use/tool_result pairing -- and the replay -- is preserved.
 #
+# Tool_use inputs (the heavy axis in a coding conversation): every axis above
+# works on what came *back* from a tool. What went *in* is usually larger -- a
+# file written with CreateFile or EditFile carries its whole content in the
+# tool_use input, and that content is already on disk. This axis walks each
+# tool_use input older than the last KEEP_LAST_N_MESSAGES messages and shortens
+# every string value in it past SIZE_THRESHOLD_BYTES, at any depth, to the same
+# <head>\n...[trimmed N characters]...\n<tail> form. Values are shortened and
+# keys are never dropped, so the input keeps the shape its schema describes and
+# the tool_use/tool_result pairing survives the replay.
+#
 # Images (the vision axis): this one is not about file size, it is about the
 # vision limits. The Claude API downscales every image to a per-model long-edge
 # ceiling before the model sees it (2576px for the high-resolution tier that
@@ -54,7 +64,7 @@
 #   trim-conversation.sh [axes] <conversation.jsonl>          # dry run (default)
 #   trim-conversation.sh [axes] --apply <conversation.jsonl>  # apply
 #
-#   axes: --thinking  --tools  --images  --server-tools  --all
+#   axes: --thinking  --tools  --tool-use  --images  --server-tools  --all
 
 set -e
 
@@ -73,6 +83,7 @@ MAX_IMAGES=300               # removal safety valve: drop oldest images only bey
 APPLY=0
 DO_THINKING=0
 DO_TOOLS=0
+DO_TOOL_USE=0
 DO_IMAGES=0
 DO_SERVER_TOOLS=0
 INPUT=""
@@ -82,11 +93,12 @@ while [ $# -gt 0 ]; do
     --apply) APPLY=1; shift ;;
     --thinking) DO_THINKING=1; shift ;;
     --tools) DO_TOOLS=1; shift ;;
+    --tool-use) DO_TOOL_USE=1; shift ;;
     --images) DO_IMAGES=1; shift ;;
     --server-tools) DO_SERVER_TOOLS=1; shift ;;
-    --all) DO_THINKING=1; DO_TOOLS=1; DO_IMAGES=1; DO_SERVER_TOOLS=1; shift ;;
+    --all) DO_THINKING=1; DO_TOOLS=1; DO_TOOL_USE=1; DO_IMAGES=1; DO_SERVER_TOOLS=1; shift ;;
     -h|--help)
-      printf 'usage: %s [--thinking] [--tools] [--images] [--server-tools] [--all] [--apply] <conversation.jsonl>\n' "$0"
+      printf 'usage: %s [--thinking] [--tools] [--tool-use] [--images] [--server-tools] [--all] [--apply] <conversation.jsonl>\n' "$0"
       exit 0
       ;;
     -*)
@@ -104,7 +116,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$INPUT" ]; then
-  printf 'usage: %s [--thinking] [--tools] [--images] [--server-tools] [--all] [--apply] <conversation.jsonl>\n' "$0" >&2
+  printf 'usage: %s [--thinking] [--tools] [--tool-use] [--images] [--server-tools] [--all] [--apply] <conversation.jsonl>\n' "$0" >&2
   exit 64
 fi
 
@@ -113,8 +125,8 @@ if [ ! -f "$INPUT" ]; then
   exit 1
 fi
 
-if [ "$DO_THINKING" -eq 0 ] && [ "$DO_TOOLS" -eq 0 ] && [ "$DO_IMAGES" -eq 0 ] && [ "$DO_SERVER_TOOLS" -eq 0 ]; then
-  printf 'no axes selected -- nothing to do. Pass --thinking, --tools, --images, --server-tools, or --all.\n' >&2
+if [ "$DO_THINKING" -eq 0 ] && [ "$DO_TOOLS" -eq 0 ] && [ "$DO_TOOL_USE" -eq 0 ] && [ "$DO_IMAGES" -eq 0 ] && [ "$DO_SERVER_TOOLS" -eq 0 ]; then
+  printf 'no axes selected -- nothing to do. Pass --thinking, --tools, --tool-use, --images, --server-tools, or --all.\n' >&2
   exit 0
 fi
 
@@ -249,6 +261,7 @@ jq -sc \
   --argjson DT "$DO_THINKING" \
   --argjson DTOOL "$DO_TOOLS" \
   --argjson DST "$DO_SERVER_TOOLS" \
+  --argjson DTU "$DO_TOOL_USE" \
   --argjson IMGB "$IMG_TOKENS_BEFORE" \
   --argjson IMGA "$IMG_TOKENS_AFTER" \
   --argjson IMGS "$IMG_TOKENS_SAVED" '
@@ -331,6 +344,10 @@ jq -sc \
        | select(.type == "tool_result" and ((.content // null) | type == "array"))
        | .content[] | select(.type == "text") | .text
        | select((length) > $X and (length) > ($H + $T + 50))) else empty end ]) as $ttexts
+  | ([ if $DTU == 1 then (range(0; $n) as $i | select(($i + 1) <= ($n - $N))
+       | ($msgs[$i].content // []) | .[]
+       | select(.type == "tool_use") | .input | .. | strings
+       | select((length) > $X and (length) > ($H + $T + 50))) else empty end ]) as $tutexts
   | ([ if $DST == 1 then (range(0; $n) as $i
        | ($msgs[$i].content // []) | .[]
        | select(.type == "server_tool_use" or (((.type // "") | endswith("_tool_result")) and .type != "tool_result"))) else empty end ]) as $stdrop
@@ -386,12 +403,24 @@ jq -sc \
                   else . end
                 )
               else . end)
+            | (if ($idx + 1) <= ($n - $N) and $DTU == 1 then
+                map(
+                  if .type == "tool_use" then
+                    .input |= walk(
+                      if type == "string" and (length) > $X and (length) > ($H + $T + 50)
+                        then trimmed_text(.)
+                        else . end
+                    )
+                  else . end
+                )
+              else . end)
           )
         else . end
     ) as $out
   # Per-axis and total token estimates: text/4, tools/2.54, thinking signature/3.35; images by pixel area (shell).
   | ([ $tdrop[] | (.signature // "") | length ] | add // 0) as $th_sig
   | ([ $ttexts[] | (length) - (trimmed_text(.) | length) ] | add // 0) as $to_chars
+  | ([ $tutexts[] | (length) - (trimmed_text(.) | length) ] | add // 0) as $tu_chars
   | ([ $stdrop[] | bill ] | add // 0) as $sv_chars
   | ($msgs | totals) as $tb0
   | ($out  | totals) as $tb1
@@ -399,6 +428,7 @@ jq -sc \
       after:  (($tb1.text / 4 + $tb1.tools / 2.54 + $tb1.sig / 3.35) + $IMGA | floor),
       thinking: ($th_sig / 3.35 | floor),
       tools:    ($to_chars / 2.54 | floor),
+      tool_use: ($tu_chars / 2.54 | floor),
       server_tools: ($sv_chars / 2.54 | floor),
       images:   $IMGS } as $stats
   | ($stats), ($out[])
@@ -443,6 +473,7 @@ printf 'by axis (approx tokens):\n'
 printf '%s\n' "$STATS" | jq -r '
   "  thinking:     \(.thinking)",
   "  tools:        \(.tools)",
+  "  tool_use:     \(.tool_use)",
   "  server_tools: \(.server_tools)",
   "  images:       \(.images)"'
 printf '  (images: %s resized, long edge -> %spx)\n' "$RESIZE_COUNT" "$CEILING"
