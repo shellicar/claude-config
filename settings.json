@@ -148,7 +148,6 @@
     ],
     "defaultMode": "acceptEdits"
   },
-  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -186,12 +185,14 @@
     ]
   },
   "effortLevel": "low",
-  "editorMode": "normal",
   "promptSuggestionEnabled": false,
-  "autoUpdatesChannel": "latest",
+  "autoUpdatesChannel": "stable",
+  "minimumVersion": "2.1.220",
   "tui": "fullscreen",
+  "editorMode": "normal",
   "verbose": true,
   "autoCompactEnabled": false,
+  "switchModelsOnFlag": true,
   "fileCheckpointingEnabled": true,
   "agentPushNotifEnabled": false
 }

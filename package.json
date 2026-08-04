@@ -2,10 +2,17 @@
   "name": "claude-config",
   "private": true,
   "packageManager": "pnpm@10.31.0+sha512.e3927388bfaa8078ceb79b748ffc1e8274e84d75163e67bc22e06c0d3aed43dd153151cbf11d7f8301ff4acb98c68bdc5cadf6989532801ffafe3b3e4a63c268",
+  "scripts": {
+    "collect": "tsx scripts/collect.mts",
+    "map": "tsx scripts/map.mts",
+    "render": "tsx scripts/render.mts",
+    "usage": "run-p collect map && tsx scripts/render.mts"
+  },
   "devDependencies": {
     "@js-joda/core": "^6.0.1",
     "@js-joda/timezone": "^2.25.1",
     "@types/node": "^26.0.1",
+    "npm-run-all2": "^9.0.2",
     "svgo": "^4.0.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
